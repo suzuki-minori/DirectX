@@ -7,6 +7,7 @@
 #include<cassert>
 #include<dxgidebug.h>
 #include<dxcapi.h>
+#include"Vector4.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -63,6 +64,7 @@ std::string ConvertString(const std::wstring& str) {
 void Log(const std::string& message) {
 	OutputDebugStringA(message.c_str());
 }
+
 
 
 IDxcBlob* CompileShader(
@@ -145,6 +147,20 @@ IDxcBlob* CompileShader(
 	return shaderBlob;
 
 }
+
+//
+//ID3D12Resource* CreateBufferResource(ID3D12Device* device, size_t sizeInBytes);
+//
+//ID3D12Resource* vertexReaource = CreateBufferResource(device, sizeof(Vector4) * 3);
+//
+//ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Vector4));
+////
+//Vector4* materialData = nullptr;
+////
+//materialResource->map(0, nullptr, reinterpret_cast<void**>(&materialData));
+////
+//*materialData = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+
 
 
 
@@ -379,6 +395,170 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 
 
+
+	//RootSignature作成
+	D3D12_ROOT_SIGNATURE_DESC descriptionRootSignature{};
+	descriptionRootSignature.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+	
+	////RootParameter作成、複数設定できるので配列。
+	//D3D12_ROOT_PARAMETER rootParameters[1] = {};
+	//rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	//rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+	//rootParameters[0].Descriptor.ShaderRegister = 0;
+	//descriptionRootSignature.pParameters=rootParameters;
+	//descriptionRootSignature.NumParameters = _countof(rootParameters);
+
+	//
+	ID3DBlob* signatureBlob = nullptr;
+	ID3DBlob* errorBlob = nullptr;
+	hr = D3D12SerializeRootSignature(&descriptionRootSignature, D3D_ROOT_SIGNATURE_VERSION_1, &signatureBlob, &errorBlob);
+	if (FAILED(hr)) {
+		Log(reinterpret_cast<char*>(errorBlob -> GetBufferPointer()));
+		assert(false);
+	}
+	//
+	ID3D12RootSignature* rootSignature = nullptr;
+	hr = device->CreateRootSignature(0, signatureBlob->GetBufferPointer(), signatureBlob->GetBufferSize(), IID_PPV_ARGS(&rootSignature));
+	assert(SUCCEEDED(hr));
+
+
+
+	//
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[1] = {};
+	
+	inputElementDescs[0].SemanticName = "POSITION";
+	inputElementDescs[0].SemanticIndex = 0;
+	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	inputElementDescs[0].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
+	inputLayoutDesc.pInputElementDescs = inputElementDescs;
+	inputLayoutDesc.NumElements = _countof(inputElementDescs);
+
+	
+
+
+	//
+	D3D12_BLEND_DESC blendDesc{};
+	//
+	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+
+
+	//
+	D3D12_RASTERIZER_DESC rasterrizerDesc{};
+	//
+	rasterrizerDesc.CullMode = D3D12_CULL_MODE_BACK;
+	//
+	rasterrizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
+
+
+	//
+	IDxcBlob* vertexShaderBlob = CompileShader(L"Object3D.VS.hlsl", L"vs_6_0", dxcUtils, dxcCompiler, includeHandler);
+	assert(vertexShaderBlob != nullptr);
+
+	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
+	assert(pixelShaderBlob != nullptr);
+
+
+
+	//
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
+	graphicsPipeLineStateDesc.pRootSignature = rootSignature;
+	graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
+	graphicsPipeLineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() };
+	graphicsPipeLineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() };
+	graphicsPipeLineStateDesc.BlendState = blendDesc;
+	graphicsPipeLineStateDesc.RasterizerState = rasterrizerDesc;
+
+	//
+	graphicsPipeLineStateDesc.NumRenderTargets = 1;
+	graphicsPipeLineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+
+	//
+	graphicsPipeLineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	
+	//
+	graphicsPipeLineStateDesc.SampleDesc.Count = 1;
+	graphicsPipeLineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+
+	//
+	ID3D12PipelineState* graphicPipeLineState = nullptr;
+	hr = device->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicPipeLineState));
+	assert(SUCCEEDED(hr));
+
+
+
+	//
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//
+	D3D12_RESOURCE_DESC vertexResourseDesc{};
+	//
+	vertexResourseDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	vertexResourseDesc.Width = sizeof(Vector4) * 3;
+	//
+	vertexResourseDesc.Height=1;
+	vertexResourseDesc.DepthOrArraySize = 1;
+	vertexResourseDesc.MipLevels = 1;
+	vertexResourseDesc.SampleDesc.Count = 1;
+	//
+	vertexResourseDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//
+	ID3D12Resource* vertexResource = nullptr;
+	hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE, &vertexResourseDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&vertexResource));
+	assert(SUCCEEDED(hr));
+
+
+
+	//
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	//
+	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	//
+	vertexBufferView.SizeInBytes = sizeof(Vector4) * 3;
+	//
+	vertexBufferView.StrideInBytes = sizeof(Vector4);
+
+
+
+
+	//
+	Vector4* vertexData = nullptr;
+	//
+	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	//
+	vertexData[0] = { -0.5f,-0.5f,0.0f,1.0f };
+	//
+	vertexData[1] = { 0.0f,0.5f,0.0f,1.0f };
+	//
+	vertexData[2] = { 0.5f,-0.5f,0.0f,1.0f };
+
+
+
+	//
+	D3D12_VIEWPORT viewport{};
+	//
+	viewport.Width = kClientWidth;
+	viewport.Height = kClientHeight;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	
+	//
+	D3D12_RECT scissorRect{};
+	//
+	scissorRect.left = 0;
+	scissorRect.right = kClientWidth;
+	scissorRect.top = 0;
+	scissorRect.bottom = kClientHeight;
+
+
+
+
+
+
+
+
 	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -411,6 +591,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
 			commandList->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
 			//
+
+
+			commandList->RSSetViewports(1, &viewport);//
+			commandList->RSSetScissorRects(1, &scissorRect);//
+			//
+			commandList->SetGraphicsRootSignature(rootSignature);
+			commandList->SetPipelineState(graphicPipeLineState);
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+			//
+			commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			//
+			commandList->DrawInstanced(3, 1, 0, 0);
+
+
+
+
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			//
@@ -446,7 +642,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			assert(SUCCEEDED(hr));
 
 
-
+			
 
 
 
@@ -476,6 +672,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	CloseWindow(hwnd);
 
 
+	
+
+
+	vertexResource->Release();
+	graphicPipeLineState->Release();
+	signatureBlob->Release();
+	if (errorBlob) {
+		errorBlob->Release();
+	}
+	rootSignature->Release();
+	pixelShaderBlob->Release();
+	vertexShaderBlob->Release();
+
+
 	//
 	IDXGIDebug1* debug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
@@ -486,4 +696,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 
 	return 0;
-}
+};
+
+
