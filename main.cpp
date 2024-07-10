@@ -11,6 +11,7 @@
 #include"MyMath.h"
 #include"MatrixMath.h"
 #include"Vector3.h"
+#include"externals/DirectXTex/DirectXTex.h"
 
 
 #pragma comment(lib,"d3d12.lib")
@@ -215,12 +216,13 @@ ID3D12DescriptorHeap* CreateDescriptorHeap(ID3D12Device* device, D3D12_DESCRIPTO
 	return descriptorHeap;
 }
 
+//DirectX::ScartchImage LoadTexture(const std::string& filePath);
 
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
-
+	/*CoInitializeEx(0, COINIT_MULTITHREADED);*/
 
 #pragma region ウィンドウの生成
 	WNDCLASS wc{};
@@ -770,16 +772,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 	}
+	
+	
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
 
 	//
-	CloseHandle(fenceEvent);
+	
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+	CloseHandle(fenceEvent);
 
+	//
+	wvpResource->Release();
+	materialResource->Release();
 	vertexResource->Release();
 	graphicPipeLineState->Release();
 	signatureBlob->Release();
@@ -791,23 +799,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexShaderBlob->Release();
 
 
-	//
-	materialResource->Release();
 
 	fence->Release();
+	
 	rtvDescriptorHeap->Release();
 	srvDescriptorHeap->Release();
 	swapChainResources[0]->Release();
 	swapChainResources[1]->Release();
-	wvpResource->Release();
 	swapChain->Release();
 
 	commandList->Release();
 	commandAllocator->Release();
 	commandQueue->Release();
-	device->Release();
 	useAdapter->Release();
 	dxgiFactory->Release();
+
+	dxcUtils->Release();
+	dxcCompiler->Release();
+	includeHandler->Release();
+	device->Release();
+
 
 #ifdef _DEBUG
 	debugController->Release();
@@ -818,6 +829,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
+	//CoUninitialize();
 
 
 
