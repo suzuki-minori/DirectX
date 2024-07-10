@@ -96,8 +96,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\OneDrive\デスクトップ\LE2C_14_スズキ_ミノリ\project\MatrixMath.cpp" />
+    <ClCompile Include="..\..\..\OneDrive\デスクトップ\LE2C_14_スズキ_ミノリ\project\MyMath.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Matrix4x4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Object3d.PS.hlsl">
@@ -114,7 +115,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\OneDrive\デスクトップ\LE2C_14_スズキ_ミノリ\project\MatrixMath.h" />
+    <ClInclude Include="..\..\..\OneDrive\デスクトップ\LE2C_14_スズキ_ミノリ\project\MyMath.h" />
     <ClInclude Include="Matrix4x4.h" />
+    <ClInclude Include="Transform.h" />
+    <ClInclude Include="Vector3.h" />
     <ClInclude Include="Vector4.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
