@@ -657,10 +657,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			/*ImGui::ShowDemoWindow();*/
-			ImGui::Begin("Window");
+			ImGui::ShowDemoWindow();
+			/*ImGui::Begin("Window");
 			ImGui::DragFloat3("color", &materialData->x, 0.01f);
-			ImGui::End();
+			ImGui::End();*/
 			ImGui::Render();
 
 
