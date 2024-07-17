@@ -266,8 +266,20 @@ void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mip
 
 	const DirectX::TexMetadata metadata = mipImages.GetMetadata();
 
-}
+	for (size_t mipLevel = 0; mipLevel < metadata.mipLevels; ++mipLevel)
+	{
+		const DirectX::Image* img = mipImages.GetImage(mipLevel, 0, 0);
 
+		HRESULT hr = texture->WriteToSubresource(
+			UINT(mipLevel),
+			nullptr,
+			img->pixels,
+			UINT(img->rowPitch),
+			UINT(img->slicePitch)
+		);
+		assert(SUCCEEDED(hr));
+	}
+}
 
 
 //Windowsアプリでのエントリーポイント(main関数)
@@ -405,6 +417,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 #endif // _DEBUG
+
+
+
+	DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
+	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	ID3D12Resource* textureResource = CreateTextureResource(device, metadata);
+	UploadTextureData(textureResource, mipImages);
 
 
 
