@@ -6,3 +6,9 @@ struct Vector4
 	float z;
 	float w;
 };
+
+
+struct Vector2 {
+	float x;
+	float y;
+};
