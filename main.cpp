@@ -654,8 +654,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*transformationMatrixData = MatrixMath::MakeIdentity4x4();
 
 
+
 	//
 	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
+
+
+	//
+	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
+	//
+	Matrix4x4* transformationMatrixDataSprite = nullptr;
+	//
+	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(transformationMatrixDataSprite));
+	//
+	*transformationMatrixDataSprite = MatrixMath::MakeIdentity4x4();
+
+	
+
 
 
 	//
@@ -776,8 +790,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 
-
-
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
 	//
@@ -786,7 +798,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
 	//
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
-
 
 
 
@@ -814,6 +825,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
 	vertexData[5].texcoord = { 1.0f,1.0f };
+
+
+	//
+	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
+	//
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
+	//
+	vertexBufferViewSprite.BufferLocation = vertexResourceSprite->GetGPUVirtualAddress();
+	//
+	vertexBufferViewSprite.SizeInBytes = sizeof(vertexData) * 6;
+	//
+	vertexBufferViewSprite.StrideInBytes = sizeof(VertexData);
+
+	//
+	VertexData* vertexDataSprite = nullptr;
+	vertexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSprite));
+	//
+	vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
+	vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[2].texcoord = { 1.0f,1.0f };
+	//
+	vertexDataSprite[3].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexDataSprite[3].texcoord = { 0.0f,0.0f };
+	vertexDataSprite[4].position = { 640.0f,0.0f,0.0f,1.0f };
+	vertexDataSprite[4].texcoord = { 1.0f,0.0f };
+	vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };
+	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
 
 	//
@@ -855,6 +896,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}
 	};
 
+	//
+	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
 
 	while (msg.message != WM_QUIT) {
@@ -922,6 +965,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			*transformationMatrixData = worldViewProjectionMatrix;
 
 			//
+			Matrix4x4 worldMatrixSprite = MatrixMath::MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+			Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
+			Matrix4x4 projectionMatrixSprite = MatrixMath::MakeOrthographicMatrix(0.0f,0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSprite = MatrixMath::Multiply(worldMatrixSprite, MatrixMath::Multiply(viewMatrixSprite, projectionMatrixSprite));
+			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+
+
+
+			//
 
 			commandList->RSSetViewports(1, &viewport);//
 			commandList->RSSetScissorRects(1, &scissorRect);//
@@ -946,6 +998,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
 
 
+			//
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+			//
+			commandList->SetComputeRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 			//
 			commandList->DrawInstanced(6, 1, 0, 0);
 
