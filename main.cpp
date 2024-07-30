@@ -726,10 +726,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
+	int kSubdivision = 16;
 
-
+	ID3D12Resource* sphereVertexResource = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
 	
-
 	//
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -857,6 +857,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
 
+
+	//
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
+	//
+	vertexBufferViewSphere.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
+	//
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData)*16*16* 6;
+	//
+	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+
+	VertexData* vertexDataSphere = nullptr;
+	sphereVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+
+	
 	//
 	D3D12_VIEWPORT viewport{};
 	//
