@@ -13,6 +13,10 @@
 #include"Vector3.h"
 #include"externals/DirectXTex/DirectXTex.h"
 #include"transformationMatrix.h"
+#define _USE_MATH_DEFINES
+#include<cmath>
+#include<math.h>
+
 
 
 #pragma comment(lib,"d3d12.lib")
@@ -726,7 +730,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
-	int kSubdivision = 16;
+	uint32_t kSubdivision = 16;
 
 	ID3D12Resource* sphereVertexResource = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
 	
@@ -857,20 +861,120 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
 
-
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
 	vertexBufferViewSphere.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
 	//
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData)*16*16* 6;
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * 16 * 16 * 6;
 	//
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
 
 	VertexData* vertexDataSphere = nullptr;
 	sphereVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
 
+
+
+	//経度一分割の角度
+	const float kLonEvery = (2 * (static_cast<float>(M_PI))) / kSubdivision;
+	//緯度一分割の角度
+	const float kLatEvery = (static_cast<float>(M_PI)) / kSubdivision;
+
+
+	//for文でsphere頂点計算
+
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+		float lat = -(static_cast<float>(M_PI)) / 2.0f + kLatEvery * latIndex;//緯度
+
+		//経度の方向に分割
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+			float u = float(lonIndex) / float(kSubdivision);
+			float v = 1.0f - float(latIndex) / float(kSubdivision);
+
+			uint32_t start = (latIndex * kSubdivision	+lonIndex) * 6;
+			float lon = lonIndex * kLonEvery;//経度
+
+			////頂点a計算
+			VertexData vertA = {};
+			vertA.position.x = cos(lat) * cos(lon);
+			vertA.position.y = sin(lat);
+			vertA.position.z = cos(lat) * sin(lon);
+			vertA.position.w = 1.0f;
+			vertA.texcoord.x =  float(lonIndex) / float(kSubdivision);
+			vertA.texcoord.y=1.0f - float(latIndex) / float(kSubdivision);
+			
+			VertexData vertB = {};
+			vertB.position.x = cos(lat + kLatEvery) * cos(lon);
+			vertB.position.y = sin(lat + kLatEvery);
+			vertB.position.z=cos(lat + kLatEvery)* sin(lon);
+			vertB.position.w = 1.0f;
+			vertB.texcoord.x = float(lonIndex) / float(kSubdivision);
+			vertB.texcoord.y = 1.0f - float(latIndex + 1) / float(kSubdivision);
+
+			VertexData vertC = {};
+			vertC.position.x = cos(lat) * cos(lon + kLonEvery);
+			vertC.position.y= sin(lat);
+			vertC.position.z= cos(lat)* sin(lon + kLonEvery);
+			vertC.position.w=1.0f;
+			vertC.texcoord.x =float(lonIndex + 1) / float(kSubdivision);
+			vertC.texcoord.y = 1.0f - float(latIndex) / float(kSubdivision);
+
+			VertexData vertD = {};
+			vertD.position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery);
+			vertD.position.y = sin(lat + kLatEvery);
+			vertD.position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery);
+			vertD.position.w = 1.0f;
+			vertD.texcoord.x= float(lonIndex + 1) / float(kSubdivision);
+			vertD.texcoord.y = 1.0f - float(latIndex + 1) / float(kSubdivision);
+
+			////b
+			//vertexData[start + 1].position = {cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f};
+			//vertexData[start + 1].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex+1) / float(kSubdivision)};
+			////c
+			//vertexData[start + 2].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
+			//vertexData[start + 2].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+			////c
+			//vertexData[start + 3].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
+			//vertexData[start + 3].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+			////b
+			//vertexData[start + 4].position = {cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f};
+			//vertexData[start + 4].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex+1) / float(kSubdivision) };
+			////d
+			//vertexData[start + 5].position = { cos(lat + kLatEvery) * cos(lon + kLonEvery), sin(lat + kLatEvery), cos(lat + kLatEvery) * sin(lon + kLonEvery),1.0f };
+			//vertexData[start + 5].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision)+lat };
+
+			/*vertexDataSphere[start].position = { cos(lat) * cos(lon),sin(lat), cos(lat) * sin(lon),1.0f };
+			vertexDataSphere[start].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+			vertexDataSphere[start + 1].position = { cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f };
+			vertexDataSphere[start + 1].position = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
+			vertexDataSphere[start + 2].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
+			vertexDataSphere[start + 2].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+			vertexDataSphere[start + 3].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
+			vertexDataSphere[start + 3].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
+			vertexDataSphere[start + 4].position = { cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f };
+			vertexDataSphere[start + 4].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
+			vertexDataSphere[start + 5].position = { cos(lat + kLatEvery) * cos(lon + kLonEvery), sin(lat + kLatEvery), cos(lat + kLatEvery) * sin(lon + kLonEvery),1.0f };
+			vertexDataSphere[start + 5].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) + lat };*/
+
+
+			vertexDataSphere[start].position = vertA.position;
+			vertexDataSphere[start].texcoord = vertA.texcoord;
+			vertexDataSphere[start + 1].position = vertB.position;
+			vertexDataSphere[start + 1].texcoord = vertB.texcoord;
+			vertexDataSphere[start + 2].position = vertC.position;
+			vertexDataSphere[start + 2].texcoord = vertC.texcoord;
+			vertexDataSphere[start + 3].position = vertD.position;
+			vertexDataSphere[start + 3].texcoord = vertD.texcoord;
+			vertexDataSphere[start + 4].position = vertC.position;
+			vertexDataSphere[start + 4].texcoord = vertC.texcoord;
+			vertexDataSphere[start + 5].position = vertB.position;
+			vertexDataSphere[start + 5].texcoord = vertB.texcoord;
+
+		}
+	}
 	
+
+
 	//
 	D3D12_VIEWPORT viewport{};
 	//
@@ -1017,6 +1121,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//
 			commandList->DrawInstanced(6, 1, 0, 0);
+			
+
+
+			
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
+
+			//
+			commandList->SetGraphicsRootConstantBufferView(1,wvpResource->GetGPUVirtualAddress());
+
+			//
+			commandList->DrawInstanced((kSubdivision* kSubdivision * 6), 1, 0, 0);
 
 			////
 			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
@@ -1029,8 +1144,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//
 			commandList->DrawInstanced(6, 1, 0, 0);
 
-
-
+			//
 
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
