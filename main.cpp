@@ -329,10 +329,26 @@ ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t 
 }
 
 
+//
+D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index) {
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	handleCPU.ptr += (descriptorSize * index);
+	return handleCPU;
+}
+
+D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descriptorHeap, uint32_t descriptorSize, uint32_t index) {
+
+	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	handleGPU.ptr += (descriptorSize * index);
+	return handleGPU;
+}
+
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	CoInitializeEx(0, COINIT_MULTITHREADED);
+
 
 #pragma region ウィンドウの生成
 	WNDCLASS wc{};
@@ -466,11 +482,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #endif // _DEBUG
 
 
+	//texture読み込み用配列
+	DirectX::ScratchImage mipImages[2] = {};
+		
+	ID3D12Resource* textureResource[2] = {};
+		
 
-	DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
-	ID3D12Resource* textureResource = CreateTextureResource(device, metadata);
-	UploadTextureData(textureResource, mipImages);
+	//texture読み込み
+	//1枚目
+	mipImages[0] = LoadTexture("resources/uvChecker.png");
+	const DirectX::TexMetadata& metadata1 =mipImages[0].GetMetadata();
+	textureResource[0] = CreateTextureResource(device, metadata1);
+	UploadTextureData(textureResource[0], mipImages[0]);
+
+	//2枚目
+	mipImages[1] = LoadTexture("resources/monsterBall.png");
+	const DirectX::TexMetadata& metadata2 = mipImages[1].GetMetadata();
+	textureResource[1] = CreateTextureResource(device, metadata2);
+	UploadTextureData(textureResource[1], mipImages[1]);
+
 
 
 
@@ -507,6 +537,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 	assert(SUCCEEDED(hr));
+	
+	
+
+	//
+	const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	const uint32_t descriptorSizeRTV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	const uint32_t descriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+
+
 
 	//
 	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
@@ -519,21 +559,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 
 
+	//srvDesc配列
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc[2] = {};
 
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-	srvDesc.Format = metadata.format;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = UINT(metadata.mipLevels);
+	//
+	srvDesc[0].Format = metadata1.format;
+	srvDesc[0].Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc[0].ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc[0].Texture2D.MipLevels = UINT(metadata1.mipLevels);
+
+	//
+	srvDesc[1].Format = metadata2.format;
+	srvDesc[1].Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc[1].ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc[1].Texture2D.MipLevels = UINT(metadata2.mipLevels);
 
 
-	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU = srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU = srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
 
-	textureSrvHandleCPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	textureSrvHandleGPU.ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//textureSrvHandle配列
+	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU[2] = {};
+	D3D12_GPU_DESCRIPTOR_HANDLE textureSrvHandleGPU[2] = {};
 
-	device->CreateShaderResourceView(textureResource, &srvDesc, textureSrvHandleCPU);
+	//1枚目()
+	textureSrvHandleCPU[0] = srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	textureSrvHandleGPU[0] = srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
+
+	textureSrvHandleCPU[0].ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	textureSrvHandleGPU[0].ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	device->CreateShaderResourceView(textureResource[0], &srvDesc[0], textureSrvHandleCPU[0]);
+
+	//2枚目
+	textureSrvHandleCPU[1] = GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
+	textureSrvHandleGPU[1] = GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
+	//
+	device->CreateShaderResourceView(textureResource[1], &srvDesc[1], textureSrvHandleCPU[1]);
 
 
 	//
@@ -1018,6 +1078,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
 
 
+	//
+	bool useMonsterBall = true;
+
+	
+
+
+
+
+
+
 	while (msg.message != WM_QUIT) {
 		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -1034,7 +1104,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			/*ImGui::Begin("Window");
 			ImGui::DragFloat3("color", &materialData->x, 0.01f);
 			ImGui::End();*/
-			
+			ImGui::Begin("texture");
+			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+			ImGui::End();
 			
 
 			//
@@ -1117,7 +1189,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
 			//
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU);
+			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
+			//
+			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
+
+			//
+			commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU[1] : textureSrvHandleGPU[0]);
+
 
 			//
 			commandList->DrawInstanced(6, 1, 0, 0);
@@ -1135,6 +1213,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			////
 			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
+
+
+			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
 
 
 			//
