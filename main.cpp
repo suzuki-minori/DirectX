@@ -40,6 +40,13 @@ struct Transform {
 struct VertexData {
 	Vector4 position;
 	Vector2 texcoord;
+	Vector3 normal;
+};
+
+
+struct MaterialData {
+	Vector4 color;
+	int32_t enableLighting;
 };
 
 
@@ -257,7 +264,7 @@ ID3D12Resource* CreateTextureResource(ID3D12Device* device, const DirectX::TexMe
 	heapProperties.Type = D3D12_HEAP_TYPE_CUSTOM;
 	heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
 	heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
-	
+
 	ID3D12Resource* resource = nullptr;
 	HRESULT hr = device->CreateCommittedResource(
 		&heapProperties,
@@ -294,7 +301,7 @@ void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mip
 
 
 ID3D12Resource* CreateDepthStencilTextureResource(ID3D12Device* device, int32_t width, int32_t height) {
-	
+
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = width;
 	resourceDesc.Height = height;
@@ -343,6 +350,10 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descrip
 	handleGPU.ptr += (descriptorSize * index);
 	return handleGPU;
 }
+
+
+
+
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -484,14 +495,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//texture読み込み用配列
 	DirectX::ScratchImage mipImages[2] = {};
-		
+
 	ID3D12Resource* textureResource[2] = {};
-		
+
 
 	//texture読み込み
 	//1枚目
 	mipImages[0] = LoadTexture("resources/uvChecker.png");
-	const DirectX::TexMetadata& metadata1 =mipImages[0].GetMetadata();
+	const DirectX::TexMetadata& metadata1 = mipImages[0].GetMetadata();
 	textureResource[0] = CreateTextureResource(device, metadata1);
 	UploadTextureData(textureResource[0], mipImages[0]);
 
@@ -524,6 +535,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//コマンドリストの生成がうまくいかなかったので起動できない
 	assert(SUCCEEDED(hr));
 
+#pragma region swapchainの設定
+
 	//
 	IDXGISwapChain4* swapChain = nullptr;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
@@ -537,27 +550,34 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	hr = dxgiFactory->CreateSwapChainForHwnd(commandQueue, hwnd, &swapChainDesc, nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(&swapChain));
 	assert(SUCCEEDED(hr));
-	
-	
 
-	//
+#pragma endregion
+
+#pragma region descriptorHeapの設定
+
+	//ディスクリプターヒープのサイズの設定
 	const uint32_t descriptorSizeSRV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	const uint32_t descriptorSizeRTV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 	const uint32_t descriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-
-
-
-	//
+	//rtv
 	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	//srv
+	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+	//dsv
+	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+
+#pragma endregion
+
+
+	//rtvDesc
 	D3D12_DESCRIPTOR_HEAP_DESC rtvDescriptorHeapDesc{};
 	rtvDescriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 	rtvDescriptorHeapDesc.NumDescriptors = 2;
 	hr = device->CreateDescriptorHeap(&rtvDescriptorHeapDesc, IID_PPV_ARGS(&rtvDescriptorHeap));
 	assert(SUCCEEDED(hr));
 
-	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
-
+#pragma region srvDescの設定
 
 	//srvDesc配列
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc[2] = {};
@@ -574,7 +594,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	srvDesc[1].ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc[1].Texture2D.MipLevels = UINT(metadata2.mipLevels);
 
+#pragma endregion
 
+#pragma region textureSrvHandleの設定
 
 	//textureSrvHandle配列
 	D3D12_CPU_DESCRIPTOR_HANDLE textureSrvHandleCPU[2] = {};
@@ -595,9 +617,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	device->CreateShaderResourceView(textureResource[1], &srvDesc[1], textureSrvHandleCPU[1]);
 
+#pragma endregion
 
-	//
-	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 
 
 	/*D3D12_DESCRIPTOR_HEAP_DESC srvDescriptorHeapDesc{};
@@ -609,16 +630,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	ID3D12Resource* swapChainResources[2] = { nullptr };
 	hr = swapChain->GetBuffer(0, IID_PPV_ARGS(&swapChainResources[0]));
-	//
+	//bufferの取得
 	assert(SUCCEEDED(hr));
 	hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
 	assert(SUCCEEDED(hr));
 
-	//
+	//renderTargetViewの設定
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 	rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-	//
+	//descriptorの先頭の取得
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle = rtvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	//
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[2];
@@ -631,7 +652,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	device->CreateRenderTargetView(swapChainResources[1], &rtvDesc, rtvHandles[1]);
 
 
-	
+
 
 	//出力ウィンドウへの文字出力
 	Log("Hello,DirectX!\n");
@@ -705,13 +726,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descriptionRootSignature.NumStaticSamplers = _countof(staticSamplers);
 
 
-	
+
 
 
 
 	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(Matrix4x4));
 	//
-	Matrix4x4*transformationMatrixData = nullptr;
+	Matrix4x4* transformationMatrixData = nullptr;
 	//
 	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	//
@@ -732,7 +753,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	*transformationMatrixDataSprite = MatrixMath::MakeIdentity4x4();
 
-	
+
 
 
 
@@ -752,7 +773,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
@@ -762,6 +783,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDescs[2].SemanticName = "NORMAL";
+	inputElementDescs[2].SemanticIndex = 0;
+	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -790,10 +815,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	IDxcBlob* pixelShaderBlob = CompileShader(L"Object3D.PS.hlsl", L"ps_6_0", dxcUtils, dxcCompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
-	uint32_t kSubdivision = 16;
 
-	ID3D12Resource* sphereVertexResource = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
-	
+
 	//
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc{};
 	dsvDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -842,55 +865,82 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	hr = device->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicPipeLineState));
 	assert(SUCCEEDED(hr));
 
-	//
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
 
-	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Vector4));
+
+#pragma region マテリアルリソースの設定
+	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(MaterialData));
 	//
-	Vector4* materialData = nullptr;
+	MaterialData* materialData = nullptr;
 	//
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
 	//
-	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	//
+	materialData->enableLighting = false;
+
+
+#pragma endregion
+
+#pragma region スプライトのマテリアルリソースの設定
+
+	//
+	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(MaterialData));
+	//
+	MaterialData* materialDataSprite = nullptr;
+	//
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
+	//
+	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	//
+	materialDataSprite->enableLighting = false;
+
+
+#pragma endregion
+
+#pragma region TriangleスプライトのvertexResourceの設定
+
+	//
+	ID3D12Resource* vertexResourceTriangle = CreateBufferResource(device, sizeof(VertexData) * 6);
+
+	//
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewTriangle{};
+	//
+	vertexBufferViewTriangle.BufferLocation = vertexResourceTriangle->GetGPUVirtualAddress();
+	//
+	vertexBufferViewTriangle.SizeInBytes = sizeof(VertexData) * 6;
+	//
+	vertexBufferViewTriangle.StrideInBytes = sizeof(VertexData);
+
+
+
+	//
+	VertexData* vertexDataTriangle = nullptr;
+	//
+	vertexResourceTriangle->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataTriangle));
+	//
+	vertexDataTriangle[0].position = { -0.5f,-0.5f,0.0f,1.0f };
+	vertexDataTriangle[0].texcoord = { 0.0f,1.0f };
+	//
+	vertexDataTriangle[1].position = { 0.0f,0.5f,0.0f,1.0f };
+	vertexDataTriangle[1].texcoord = { 0.5f,0.0f };
+	//
+	vertexDataTriangle[2].position = { 0.5f,-0.5f,0.0f,1.0f };
+	vertexDataTriangle[2].texcoord = { 1.0f,1.0f };
 
 
 	//
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	vertexDataTriangle[3].position = { -0.5f,-0.5f,0.5f,1.0f };
+	vertexDataTriangle[3].texcoord = { 0.0f,1.0f };
 	//
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	vertexDataTriangle[4].position = { 0.0f,0.0f,0.0f,1.0f };
+	vertexDataTriangle[4].texcoord = { 0.5f,0.0f };
 	//
-	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
-	//
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	vertexDataTriangle[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
+	vertexDataTriangle[5].texcoord = { 1.0f,1.0f };
 
+#pragma endregion
 
-
-	//
-	VertexData* vertexData = nullptr;
-	//
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
-	//
-	vertexData[0].position = { -0.5f,-0.5f,0.0f,1.0f };
-	vertexData[0].texcoord = { 0.0f,1.0f };
-	//
-	vertexData[1].position = { 0.0f,0.5f,0.0f,1.0f };
-	vertexData[1].texcoord = { 0.5f,0.0f };
-	//
-	vertexData[2].position = { 0.5f,-0.5f,0.0f,1.0f };
-	vertexData[2].texcoord = { 1.0f,1.0f };
-
-
-	//
-	vertexData[3].position = { -0.5f,-0.5f,0.5f,1.0f };
-	vertexData[3].texcoord = { 0.0f,1.0f };
-	//
-	vertexData[4].position = { 0.0f,0.0f,0.0f,1.0f };
-	vertexData[4].texcoord = { 0.5f,0.0f };
-	//
-	vertexData[5].position = { 0.5f,-0.5f,-0.5f,1.0f };
-	vertexData[5].texcoord = { 1.0f,1.0f };
-
-
+#pragma region スプライトのvertexResouceの設定
 	//
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
 	//
@@ -908,6 +958,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	vertexDataSprite[0].position = { 0.0f,360.0f,0.0f,1.0f };
 	vertexDataSprite[0].texcoord = { 0.0f,1.0f };
+	vertexDataSprite[0].normal = { 0.0f,0.0f,-1.0f };
 	vertexDataSprite[1].position = { 0.0f,0.0f,0.0f,1.0f };
 	vertexDataSprite[1].texcoord = { 0.0f,0.0f };
 	vertexDataSprite[2].position = { 640.0f,360.0f,0.0f,1.0f };
@@ -920,25 +971,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexDataSprite[5].position = { 640.0f,360.0f,0.0f,1.0f };
 	vertexDataSprite[5].texcoord = { 1.0f,1.0f };
 
+#pragma endregion
 
+#pragma region スフィアの頂点リソースの設定
+	uint32_t kSubdivision = 16;
+
+	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
-	vertexBufferViewSphere.BufferLocation = sphereVertexResource->GetGPUVirtualAddress();
+	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
 	//
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * 16 * 16 * 6;
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * kSubdivision * kSubdivision * 6;
 	//
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
 
 	VertexData* vertexDataSphere = nullptr;
-	sphereVertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
-
+	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
 
 
 	//経度一分割の角度
 	const float kLonEvery = (2 * (static_cast<float>(M_PI))) / kSubdivision;
 	//緯度一分割の角度
 	const float kLatEvery = (static_cast<float>(M_PI)) / kSubdivision;
+
 
 
 	//for文でsphere頂点計算
@@ -951,7 +1007,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			float u = float(lonIndex) / float(kSubdivision);
 			float v = 1.0f - float(latIndex) / float(kSubdivision);
 
-			uint32_t start = (latIndex * kSubdivision	+lonIndex) * 6;
+			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
 			float lon = lonIndex * kLonEvery;//経度
 
 			////頂点a計算
@@ -960,81 +1016,78 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			vertA.position.y = sin(lat);
 			vertA.position.z = cos(lat) * sin(lon);
 			vertA.position.w = 1.0f;
-			vertA.texcoord.x =  float(lonIndex) / float(kSubdivision);
-			vertA.texcoord.y=1.0f - float(latIndex) / float(kSubdivision);
-			
+			vertA.texcoord.x = float(lonIndex) / float(kSubdivision);
+			vertA.texcoord.y = 1.0f - float(latIndex) / float(kSubdivision);
+			vertA.normal.x = vertA.position.x;
+			vertA.normal.y = vertA.position.y;
+			vertA.normal.z = vertA.position.z;
+
+
 			VertexData vertB = {};
 			vertB.position.x = cos(lat + kLatEvery) * cos(lon);
 			vertB.position.y = sin(lat + kLatEvery);
-			vertB.position.z=cos(lat + kLatEvery)* sin(lon);
+			vertB.position.z = cos(lat + kLatEvery) * sin(lon);
 			vertB.position.w = 1.0f;
 			vertB.texcoord.x = float(lonIndex) / float(kSubdivision);
 			vertB.texcoord.y = 1.0f - float(latIndex + 1) / float(kSubdivision);
+			vertB.normal.x = vertB.position.x;
+			vertB.normal.y = vertB.position.y;
+			vertB.normal.z = vertB.position.z;
+
 
 			VertexData vertC = {};
 			vertC.position.x = cos(lat) * cos(lon + kLonEvery);
-			vertC.position.y= sin(lat);
-			vertC.position.z= cos(lat)* sin(lon + kLonEvery);
-			vertC.position.w=1.0f;
-			vertC.texcoord.x =float(lonIndex + 1) / float(kSubdivision);
+			vertC.position.y = sin(lat);
+			vertC.position.z = cos(lat) * sin(lon + kLonEvery);
+			vertC.position.w = 1.0f;
+			vertC.texcoord.x = float(lonIndex + 1) / float(kSubdivision);
 			vertC.texcoord.y = 1.0f - float(latIndex) / float(kSubdivision);
+			vertC.normal.x = vertC.position.x;
+			vertC.normal.y = vertC.position.y;
+			vertC.normal.z = vertC.position.z;
+
 
 			VertexData vertD = {};
 			vertD.position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery);
 			vertD.position.y = sin(lat + kLatEvery);
 			vertD.position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery);
 			vertD.position.w = 1.0f;
-			vertD.texcoord.x= float(lonIndex + 1) / float(kSubdivision);
+			vertD.texcoord.x = float(lonIndex + 1) / float(kSubdivision);
 			vertD.texcoord.y = 1.0f - float(latIndex + 1) / float(kSubdivision);
+			vertD.normal.x = vertD.position.x;
+			vertD.normal.y = vertD.position.y;
+			vertD.normal.z = vertD.position.z;
 
-			////b
-			//vertexData[start + 1].position = {cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f};
-			//vertexData[start + 1].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex+1) / float(kSubdivision)};
-			////c
-			//vertexData[start + 2].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
-			//vertexData[start + 2].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
-			////c
-			//vertexData[start + 3].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
-			//vertexData[start + 3].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
-			////b
-			//vertexData[start + 4].position = {cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f};
-			//vertexData[start + 4].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex+1) / float(kSubdivision) };
-			////d
-			//vertexData[start + 5].position = { cos(lat + kLatEvery) * cos(lon + kLonEvery), sin(lat + kLatEvery), cos(lat + kLatEvery) * sin(lon + kLonEvery),1.0f };
-			//vertexData[start + 5].texcoord = { float(lonIndex+1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision)+lat };
 
-			/*vertexDataSphere[start].position = { cos(lat) * cos(lon),sin(lat), cos(lat) * sin(lon),1.0f };
-			vertexDataSphere[start].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
-			vertexDataSphere[start + 1].position = { cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f };
-			vertexDataSphere[start + 1].position = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
-			vertexDataSphere[start + 2].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
-			vertexDataSphere[start + 2].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
-			vertexDataSphere[start + 3].position = { cos(lat) * cos(lon + kLonEvery),sin(lat),cos(lat) * sin(lon + kLonEvery),1.0f };
-			vertexDataSphere[start + 3].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) };
-			vertexDataSphere[start + 4].position = { cos(lat + kLatEvery) * cos(lon),sin(lat + kLatEvery),cos(lat + kLatEvery) * sin(lon),1.0f };
-			vertexDataSphere[start + 4].texcoord = { float(lonIndex) / float(kSubdivision),1.0f - float(latIndex + 1) / float(kSubdivision) };
-			vertexDataSphere[start + 5].position = { cos(lat + kLatEvery) * cos(lon + kLonEvery), sin(lat + kLatEvery), cos(lat + kLatEvery) * sin(lon + kLonEvery),1.0f };
-			vertexDataSphere[start + 5].texcoord = { float(lonIndex + 1) / float(kSubdivision),1.0f - float(latIndex) / float(kSubdivision) + lat };*/
+
 
 
 			vertexDataSphere[start].position = vertA.position;
 			vertexDataSphere[start].texcoord = vertA.texcoord;
+			vertexDataSphere[start].normal = vertA.normal;
 			vertexDataSphere[start + 1].position = vertB.position;
 			vertexDataSphere[start + 1].texcoord = vertB.texcoord;
+			vertexDataSphere[start + 1].normal = vertB.normal;
 			vertexDataSphere[start + 2].position = vertC.position;
 			vertexDataSphere[start + 2].texcoord = vertC.texcoord;
+			vertexDataSphere[start + 2].normal = vertC.normal;
 			vertexDataSphere[start + 3].position = vertD.position;
 			vertexDataSphere[start + 3].texcoord = vertD.texcoord;
+			vertexDataSphere[start + 3].normal = vertD.normal;
 			vertexDataSphere[start + 4].position = vertC.position;
 			vertexDataSphere[start + 4].texcoord = vertC.texcoord;
+			vertexDataSphere[start + 4].normal = vertC.normal;
 			vertexDataSphere[start + 5].position = vertB.position;
 			vertexDataSphere[start + 5].texcoord = vertB.texcoord;
+			vertexDataSphere[start + 5].normal = vertB.normal;
 
 		}
 	}
-	
+#pragma endregion
 
 
+
+#pragma region ビューポートの初期化
 	//
 	D3D12_VIEWPORT viewport{};
 	//
@@ -1045,6 +1098,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
+#pragma endregion
+
+#pragma region シザーの初期化
 	//
 	D3D12_RECT scissorRect{};
 	//
@@ -1053,10 +1109,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.top = 0;
 	scissorRect.bottom = kClientHeight;
 
+#pragma endregion
 
+#pragma region ImGuiの初期化
 
-	//
-	//
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
@@ -1068,6 +1124,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		srvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 		srvDescriptorHeap->GetGPUDescriptorHandleForHeapStart());
 
+#pragma endregion
 
 
 	Transform transform{
@@ -1081,7 +1138,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	bool useMonsterBall = true;
 
-	
+
 
 
 
@@ -1100,20 +1157,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 
-			ImGui::ShowDemoWindow();
-			/*ImGui::Begin("Window");
-			ImGui::DragFloat3("color", &materialData->x, 0.01f);
-			ImGui::End();*/
+			//			ImGui::ShowDemoWindow();
+						/*ImGui::Begin("Window");
+						ImGui::DragFloat3("color", &materialData->x, 0.01f);
+						ImGui::End();*/
 			ImGui::Begin("texture");
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+			ImGui::SliderAngle("Agnle", &transform.rotate.y);
 			ImGui::End();
-			
+
 
 			//
 			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
 			commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-			transform.rotate.y += 0.03f;
+			//			transform.rotate.y += 0.03f;
 			Transform cameraTransform{ {1.0f,1.0f,1.0f} ,{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 
 
@@ -1135,9 +1193,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 
-			
+
 			//描画。処理しない。
-			
+
 			ImGui::Render();
 
 			//
@@ -1171,62 +1229,60 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-			//
-
+			//ビューポートの設定
 			commandList->RSSetViewports(1, &viewport);//
 			commandList->RSSetScissorRects(1, &scissorRect);//
 			//
 			commandList->SetGraphicsRootSignature(rootSignature);
 			commandList->SetPipelineState(graphicPipeLineState);
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 			//
 			commandList->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-			//
+			//マテリアルリソースの設定
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+
+			//wvpリソースの設定
+			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+
+
+
+			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
+
+
+			//
+			commandList->DrawInstanced(6, 1, 0, 0);
+
+
+#pragma region 球体の描画
+
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 
 			//
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
 
 			//
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
-			//
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
-
-			//
 			commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU[1] : textureSrvHandleGPU[0]);
 
-
 			//
-			commandList->DrawInstanced(6, 1, 0, 0);
-			
-
-
-			
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
-
-			//
-			commandList->SetGraphicsRootConstantBufferView(1,wvpResource->GetGPUVirtualAddress());
-
-			//
-			commandList->DrawInstanced((kSubdivision* kSubdivision * 6), 1, 0, 0);
-
+			commandList->DrawInstanced((kSubdivision * kSubdivision * 6), 1, 0, 0);
+#pragma endregion
 			////
 			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
 
-
-			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
-
-
-			//
+#pragma region スプライト描画
+			//vbvの設定
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-			//
+			//wvpの設定
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-			//
+			//srvのディスクリプターテーブルの設定
+			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
+
+			//描画
 			commandList->DrawInstanced(6, 1, 0, 0);
+#pragma endregion
 
-			//
-
+#pragma region トランジションバリアの設定
 			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
@@ -1234,16 +1290,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
 			//
 			commandList->ResourceBarrier(1, &barrier);
+#pragma endregion
 
 
 
 
-
-			//
+			//コマンドリストの内容を確定
 			hr = commandList->Close();
 			assert(SUCCEEDED(hr));
 
-			//
+			//コマンドリストの実行
 			ID3D12CommandList* commandLists[] = { commandList };
 			commandQueue->ExecuteCommandLists(1, commandLists);
 			//
@@ -1275,14 +1331,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 	}
-	
-	
+
+
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
 
 	//
-	
+
 	ImGui_ImplDX12_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
@@ -1291,7 +1347,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	wvpResource->Release();
 	materialResource->Release();
-	vertexResource->Release();
+	vertexResourceTriangle->Release();
 	graphicPipeLineState->Release();
 	signatureBlob->Release();
 	if (errorBlob) {
@@ -1304,13 +1360,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	fence->Release();
-	
+
 	rtvDescriptorHeap->Release();
 	srvDescriptorHeap->Release();
 	swapChainResources[0]->Release();
 	swapChainResources[1]->Release();
 	swapChain->Release();
-	
+
 	commandList->Release();
 	commandAllocator->Release();
 	commandQueue->Release();
@@ -1332,7 +1388,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	
+
 
 
 
