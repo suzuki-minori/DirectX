@@ -948,6 +948,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
+	ID3D12Resource* indexResourceSprite = CreateBufferResource(device, sizeof(uint32_t) * 6);
+	
+	uint32_t* indexSpriteData = nullptr;
+	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(indexSpriteData));
+
+	D3D12_INDEX_BUFFER_VIEW indexBufferViewSprite{};
+	//
+	indexBufferViewSprite.BufferLocation = indexResourceSprite->GetGPUVirtualAddress();
+	//
+	indexBufferViewSprite.SizeInBytes = sizeof(uint32_t) * 6;
+	//
+	indexBufferViewSprite.Format = DXGI_FORMAT_R32_UINT;
+	//
+	uint32_t* indexDataSprite = nullptr;
+	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&indexDataSprite));
+	indexDataSprite[0] = 0; indexDataSprite[1] = 1; indexDataSprite[2] = 2;
+	indexDataSprite[3] = 1; indexDataSprite[4] = 3; indexDataSprite[5] = 2;
+
+
 #pragma region スプライトのvertexResouceの設定
 	//
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
