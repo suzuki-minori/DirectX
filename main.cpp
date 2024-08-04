@@ -1103,6 +1103,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->direction = { 1.0f,0.0f,0.0f };
 	directionalLightData->intensity = 1.0f;
 
+	
+
 #pragma region ビューポートの初期化
 	//
 	D3D12_VIEWPORT viewport{};
@@ -1187,7 +1189,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
 			commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-			//			transform.rotate.y += 0.03f;
+			transform.rotate.y += 0.03f;
 			Transform cameraTransform{ {1.0f,1.0f,1.0f} ,{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 
 
