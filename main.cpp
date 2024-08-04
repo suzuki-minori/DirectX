@@ -615,6 +615,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//2枚目
 	textureSrvHandleCPU[1] = GetCPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
 	textureSrvHandleGPU[1] = GetGPUDescriptorHandle(srvDescriptorHeap, descriptorSizeSRV, 2);
+	
+	textureSrvHandleCPU[1].ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	textureSrvHandleGPU[1].ptr += device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	
 	//
 	device->CreateShaderResourceView(textureResource[1], &srvDesc[1], textureSrvHandleCPU[1]);
 
@@ -734,14 +738,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(Matrix4x4));
+	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
 	//
-	Matrix4x4* transformationMatrixData = nullptr;
+	TransformationMatrix* transformationMatrixData = nullptr;
 	//
 	wvpResource->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixData));
 	//
-	*transformationMatrixData = MatrixMath::MakeIdentity4x4();
-
+	transformationMatrixData->WVP =MatrixMath::MakeIdentity4x4();
+	transformationMatrixData->World= MatrixMath::MakeIdentity4x4();
 
 
 	//
@@ -749,13 +753,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//
-	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
+	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(TransformationMatrix));
 	//
-	Matrix4x4* transformationMatrixDataSprite = nullptr;
+	TransformationMatrix* transformationMatrixDataSprite = nullptr;
 	//
 	transformationMatrixResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixDataSprite));
 	//
-	*transformationMatrixDataSprite = MatrixMath::MakeIdentity4x4();
+	transformationMatrixDataSprite->WVP = MatrixMath::MakeIdentity4x4();
 
 
 
@@ -880,7 +884,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	//
-	materialData->enableLighting = false;
+	materialData->enableLighting = true;
 
 
 #pragma endregion
@@ -1192,14 +1196,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 viewMatrix = MatrixMath::Inverse(cameraMatrix);
 			Matrix4x4 projectionMatrix = MatrixMath::MakePerspectiveFovMatrix(0.45f, float(kClientWidth) / float(kClientHeight), 0.1f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrix = MatrixMath::Multiply(worldMatrix, MatrixMath::Multiply(viewMatrix, projectionMatrix));
-			*transformationMatrixData = worldViewProjectionMatrix;
+			transformationMatrixData->WVP = worldViewProjectionMatrix;
+			transformationMatrixData->World = worldMatrix;
 
 			//
 			Matrix4x4 worldMatrixSprite = MatrixMath::MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 			Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
 			Matrix4x4 projectionMatrixSprite = MatrixMath::MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSprite = MatrixMath::Multiply(worldMatrixSprite, MatrixMath::Multiply(viewMatrixSprite, projectionMatrixSprite));
-			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
+			transformationMatrixDataSprite->World = worldMatrixSprite;
 
 
 			//
@@ -1255,11 +1261,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
 			//wvpリソースの設定
-			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
 
 
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
+
+
+			//
+			commandList->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 
 			//
