@@ -14,6 +14,7 @@
 #include"externals/DirectXTex/DirectXTex.h"
 #include"light.h"
 #include"transformationMatrix.h"
+#include"Matrix3x3.h"
 #define _USE_MATH_DEFINES
 #include<cmath>
 #include<math.h>
@@ -48,6 +49,8 @@ struct VertexData {
 struct MaterialData {
 	Vector4 color;
 	int32_t enableLighting;
+	float padding[3];
+	Matrix4x4 uvTransform;
 };
 
 
@@ -874,6 +877,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 
 
+	
+	Transform uvTransformSprite{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+
+
 
 #pragma region マテリアルリソースの設定
 	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(MaterialData));
@@ -885,6 +896,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialData->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	//
 	materialData->enableLighting = true;
+	//
+	materialData->uvTransform = MatrixMath::MakeIdentity4x4();
 
 
 #pragma endregion
@@ -901,7 +914,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialDataSprite->color = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
 	//
 	materialDataSprite->enableLighting = false;
-
+	//
+	materialDataSprite->uvTransform = MatrixMath::MakeIdentity4x4();
 
 #pragma endregion
 
@@ -1198,9 +1212,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 						/*ImGui::Begin("Window");
 						ImGui::DragFloat3("color", &materialData->x, 0.01f);
 						ImGui::End();*/
+			
+			Matrix4x4 uvTransformMatrix = MatrixMath::MakeScaleMatrix(uvTransformSprite.scale);
+			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeRotateZMatrix(uvTransformSprite.rotate.z));
+			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeTranslateMatrix(uvTransformSprite.translate));
+			materialDataSprite->uvTransform = uvTransformMatrix;
+
+			
+			
 			ImGui::Begin("texture");
+			ImGui::DragFloat3("*scale", &transform.scale.x);//InputFloatだと直入力のみ有効
+			ImGui::DragFloat3("*rotate", &transform.rotate.x);//DragFloatにすればカーソルでも値を変更できる
+			ImGui::DragFloat3("*translate", &transform.translate.x);
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-			ImGui::SliderAngle("Agnle", &transform.rotate.y);
+			ImGui::SliderAngle("Angle", &transform.rotate.y);
+			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 			ImGui::End();
 
 
