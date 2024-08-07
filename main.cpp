@@ -4,7 +4,6 @@
 #include<format>
 #include<d3d12.h>
 #include<dxgi1_6.h>
-#include<cassert>
 #include<dxgidebug.h>
 #include<dxcapi.h>
 #include"Vector4.h"
@@ -18,8 +17,9 @@
 #define _USE_MATH_DEFINES
 #include<cmath>
 #include<math.h>
-
-
+#include<fstream>
+#include<sstream>
+#include<cassert>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -53,6 +53,9 @@ struct MaterialData {
 	Matrix4x4 uvTransform;
 };
 
+struct ModelData {
+	std::vector<VertexData>vertices;
+};
 
 //ウィンドウプロシージャー
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -356,7 +359,66 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descrip
 }
 
 
+ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+	
+	ModelData modelData;
+	std::vector<Vector4>positions;
+	std::vector<Vector3>normals;
+	std::vector<Vector2>texcoords;
+	std::string line;
+	
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
 
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		if (identifier == "v") {
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			position.y *= -1.0f;
+			positions.push_back(position);
+		}
+		else if (identifier == "vt") {
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoords.push_back(texcoord);
+		}
+		else if (identifier == "vn") {
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}else if(identifier == "f") {
+			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
+				std::string vertexDefinition;
+				s >> vertexDefinition;
+
+				std::istringstream v(vertexDefinition);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; ++element) {
+					std::string index;
+					std::getline(v, index, '/');
+					elementIndices[element] = std::stoi(index);
+				}
+				//
+				Vector4 position = positions[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				Vector3 normal = normals[elementIndices[2] - 1];
+				VertexData vertex = { position,texcoord,normal };
+				modelData.vertices.push_back(vertex);
+			}
+		}
+
+	}
+
+
+	return modelData;
+
+	
+}
 
 
 //Windowsアプリでのエントリーポイント(main関数)
@@ -1013,18 +1075,35 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region スフィアの頂点リソースの設定
 	uint32_t kSubdivision = 16;
 
-	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
+
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
+
+	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
 	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
 	//
-	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * kSubdivision * kSubdivision * 6;
+	vertexBufferViewSphere.SizeInBytes = UINT(sizeof(VertexData)*modelData.vertices.size());
 	//
 	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
 
 	VertexData* vertexDataSphere = nullptr;
 	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+	std::memcpy(vertexDataSphere, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
+
+	//ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
+	////
+	//D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
+	////
+	//vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
+	////
+	//vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * kSubdivision * kSubdivision * 6;
+	////
+	//vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+
+	//VertexData* vertexDataSphere = nullptr;
+	//vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
 
 
 	//経度一分割の角度
@@ -1333,7 +1412,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			commandList->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU[1] : textureSrvHandleGPU[0]);
 
 			//
-			commandList->DrawInstanced((kSubdivision * kSubdivision * 6), 1, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+
+			//
+			//commandList->DrawInstanced((kSubdivision * kSubdivision * 6), 1, 0, 0);
 #pragma endregion
 			////
 			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
@@ -1467,13 +1549,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//
-	IDXGIDebug1* debug;
+	/*IDXGIDebug1* debug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
 		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
-	}
+	}*/
 
 
 	CoUninitialize();
