@@ -4,7 +4,6 @@
 #include<format>
 #include<d3d12.h>
 #include<dxgi1_6.h>
-#include<cassert>
 #include<dxgidebug.h>
 #include<dxcapi.h>
 #include"Vector4.h"
@@ -20,8 +19,9 @@
 #define _USE_MATH_DEFINES
 #include<cmath>
 #include<math.h>
-
-
+#include<fstream>
+#include<sstream>
+#include<cassert>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -426,6 +426,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
 			texcoords.push_back(texcoord);
+	}
 
 		}
 		else if (identifier == "vn") {
@@ -1618,13 +1619,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//
-	IDXGIDebug1* debug;
+	/*IDXGIDebug1* debug;
 	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug)))) {
 		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
 		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
 		debug->Release();
-	}
+	}*/
 
 
 	CoUninitialize();
