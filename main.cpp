@@ -20,6 +20,7 @@
 #include<math.h>
 #include<fstream>
 #include<sstream>
+#include<wrl.h>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -30,6 +31,21 @@
 #include"externals/imgui/imgui_impl_dx12.h"
 #include"externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+class ResourceObject {
+public:
+	ResourceObject(Microsoft::WRL::ComPtr<ID3D12Resource> resource)
+		:resource_(resource)
+	{}
+	~ResourceObject() {
+		if (resource_) {
+			resource_->Release();
+		}
+	}
+	Microsoft::WRL::ComPtr<ID3D12Resource> Get() { return resource_; }
+private:
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+};
 
 
 struct Transform {
