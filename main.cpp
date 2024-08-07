@@ -53,6 +53,11 @@ struct MaterialData {
 	Matrix4x4 uvTransform;
 };
 
+struct MaterialDataModel {
+	std::string textureFilePath;
+};
+
+
 
 struct ModelData {
 	std::vector<VertexData>vertices;
@@ -357,6 +362,20 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descrip
 	D3D12_GPU_DESCRIPTOR_HANDLE handleGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	handleGPU.ptr += (descriptorSize * index);
 	return handleGPU;
+}
+
+
+MaterialDataModel LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
+
+	MaterialDataModel materialDataModel;
+	std::string line;
+	std::ifstream file(directoryPath + "/" + filename);
+	assert(file.is_open());
+
+	while (std::getline(file, line)) {
+		std::string identifier
+	}
+
 }
 
 
