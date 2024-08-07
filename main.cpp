@@ -61,6 +61,7 @@ struct MaterialDataModel {
 
 struct ModelData {
 	std::vector<VertexData>vertices;
+	MaterialDataModel material;
 };
 
 //ウィンドウプロシージャー
@@ -365,6 +366,8 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descrip
 }
 
 
+
+
 MaterialDataModel LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
 
 	MaterialDataModel materialDataModel;
@@ -373,9 +376,22 @@ MaterialDataModel LoadMaterialTemplateFile(const std::string& directoryPath, con
 	assert(file.is_open());
 
 	while (std::getline(file, line)) {
-		std::string identifier
+		
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		//
+		if (identifier == "map_Kd") {
+			std::string textureFilename;
+			s >> textureFilename;
+			//
+			materialDataModel.textureFilePath = directoryPath + "/" + textureFilename;
+		}
+		
 	}
 
+	return materialDataModel;
 }
 
 
@@ -443,11 +459,21 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 			modelData.vertices.push_back(triangle[1]);
 			modelData.vertices.push_back(triangle[0]);
 		}
+		else if (identifier == "mtllib") {
+			//
+			std::string materialFilename;
+			s >> materialFilename;
+			//
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+		}
 	}
 
 	return modelData;
 
 }
+
+
+
 
 
 //Windowsアプリでのエントリーポイント(main関数)
@@ -587,6 +613,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #endif // _DEBUG
 
+#pragma region obj読み込み
+
+	ModelData modelData = LoadObjFile("resources", "axis.obj");
+
+	ID3D12Resource* vertexResourceModel = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	////
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewModel{};
+	////
+	vertexBufferViewModel.BufferLocation = vertexResourceModel->GetGPUVirtualAddress();
+	////
+	vertexBufferViewModel.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	////
+	vertexBufferViewModel.StrideInBytes = sizeof(VertexData);
+
+	VertexData* vertexDataModel = nullptr;
+	vertexResourceModel->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataModel));
+	std::memcpy(vertexDataModel, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+
+#pragma endregion
 
 	//texture読み込み用配列
 	DirectX::ScratchImage mipImages[2] = {};
@@ -602,7 +647,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	UploadTextureData(textureResource[0], mipImages[0]);
 
 	//2枚目
-	mipImages[1] = LoadTexture("resources/monsterBall.png");
+	mipImages[1] = LoadTexture(modelData.material.textureFilePath);;
 	const DirectX::TexMetadata& metadata2 = mipImages[1].GetMetadata();
 	textureResource[1] = CreateTextureResource(device, metadata2);
 	UploadTextureData(textureResource[1], mipImages[1]);
@@ -1102,24 +1147,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 #pragma region スフィアの頂点リソースの設定
-
-	ModelData modelData = LoadObjFile("resources", "axis.obj");
-
-	ID3D12Resource* vertexResourceModel= CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
-	////
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewModel{};
-	////
-	vertexBufferViewModel.BufferLocation = vertexResourceModel->GetGPUVirtualAddress();
-	////
-	vertexBufferViewModel.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
-	////
-	vertexBufferViewModel.StrideInBytes = sizeof(VertexData);
-
-	VertexData* vertexDataModel= nullptr;
-	vertexResourceModel->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataModel));
-	std::memcpy(vertexDataModel, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
-	
-	
 	//
 	uint32_t kSubdivision = 16;
 
