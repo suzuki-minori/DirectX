@@ -414,19 +414,19 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 		s >> identifier;
 
 		if (identifier == "v") {
-			
+
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
 			position.w = 1.0f;
 			positions.push_back(position);
-		
+
 		}
 		else if (identifier == "vt") {
-			
+
 			Vector2 texcoord;
 			s >> texcoord.x >> texcoord.y;
 			texcoords.push_back(texcoord);
-	}
+
 
 		}
 		else if (identifier == "vn") {
@@ -458,7 +458,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 				Vector3 normal = normals[elementIndices[2] - 1];
 				VertexData vertex = { position,texcoord,normal };
 				modelData.vertices.push_back(vertex);
-				
+
 				position.x *= -1.0f;
 				normal.x *= -1.0f;
 				texcoord.y = 1.0f - texcoord.y;
@@ -477,13 +477,12 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 			std::string materialFilename;
 			s >> materialFilename;
 			//
-			modelData.material= LoadMaterialTemplateFile(directoryPath, materialFilename);
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
 		}
 
 	}
 
 	return modelData;
-
 
 }
 
@@ -1161,18 +1160,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	
 
-	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
 
-	D3D12_VERTEX_BUFFER_VIEW vertexBufferView{};
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
-	vertexBufferView.BufferLocation = vertexResource->GetGPUVirtualAddress();
+	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
 	//
-	vertexBufferView.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());;
+	vertexBufferViewSphere.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());;
 	//
-	vertexBufferView.StrideInBytes = sizeof(VertexData);
+	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
 
 	VertexData* vertexData = nullptr;
-	vertexResource->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
+	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexData));
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
 
 
@@ -1474,7 +1473,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region 球体の描画
 
-			commandList->IASetVertexBuffers(0, 1, &vertexBufferView);
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
 
 			//
 			commandList->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
