@@ -32,20 +32,20 @@
 #include"externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-class ResourceObject {
-public:
-	ResourceObject(Microsoft::WRL::ComPtr<ID3D12Resource> resource)
-		:resource_(resource)
-	{}
-	~ResourceObject() {
-		if (resource_) {
-			resource_->Release();
-		}
-	}
-	Microsoft::WRL::ComPtr<ID3D12Resource> Get() { return resource_; }
-private:
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
-};
+//class ResourceObject {
+//public:
+//	ResourceObject(Microsoft::WRL::ComPtr<ID3D12Resource> resource)
+//		:resource_(resource)
+//	{}
+//	~ResourceObject() {
+//		if (resource_) {
+//			resource_->Release();
+//		}
+//	}
+//	Microsoft::WRL::ComPtr<ID3D12Resource> Get() { return resource_; }
+//private:
+//	Microsoft::WRL::ComPtr<ID3D12Resource> resource_;
+//};
 
 
 struct Transform {
@@ -279,7 +279,7 @@ DirectX::ScratchImage LoadTexture(const std::string& filePath) {
 }
 
 
-ID3D12Resource* CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata) {
+ID3D12Resource* CreateTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const DirectX::TexMetadata& metadata) {
 
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Width = UINT(metadata.width);
@@ -572,7 +572,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//適切なアダプタが見つからなかった
 	assert(useAdapter != nullptr);
 
-	ID3D12Device* device = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Device> device = nullptr;
 	//機能レベルとログ出力の文字列
 	D3D_FEATURE_LEVEL featureLevels[] = {
 		D3D_FEATURE_LEVEL_12_2,D3D_FEATURE_LEVEL_12_1,D3D_FEATURE_LEVEL_12_0
@@ -633,7 +633,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	ModelData modelData = LoadObjFile("resources", "axis.obj");
 
-	ID3D12Resource* vertexResourceModel = CreateBufferResource(device, sizeof(VertexData) * modelData.vertices.size());
+	ID3D12Resource* vertexResourceModel = CreateBufferResource(device.Get(), sizeof(VertexData) * modelData.vertices.size());
 	////
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewModel{};
 	////
@@ -717,11 +717,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	const uint32_t descriptorSizeDSV = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 	//rtv
-	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
+	ID3D12DescriptorHeap* rtvDescriptorHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, 2, false);
 	//srv
-	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
+	ID3D12DescriptorHeap* srvDescriptorHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 128, true);
 	//dsv
-	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
+	ID3D12DescriptorHeap* dsvDescriptorHeap = CreateDescriptorHeap(device.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 
 #pragma endregion
 
@@ -893,7 +893,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(TransformationMatrix));
+	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
 	//
 	TransformationMatrix* transformationMatrixData = nullptr;
 	//
@@ -904,11 +904,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//
-	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device, kClientWidth, kClientHeight);
+	ID3D12Resource* depthStencilResource = CreateDepthStencilTextureResource(device.Get(), kClientWidth, kClientHeight);
 
 
 	//
-	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(TransformationMatrix));
+	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device.Get(), sizeof(TransformationMatrix));
 	//
 	TransformationMatrix* transformationMatrixDataSprite = nullptr;
 	//
@@ -1039,7 +1039,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 #pragma region マテリアルリソースの設定
-	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(MaterialData));
+	ID3D12Resource* materialResource = CreateBufferResource(device.Get(), sizeof(MaterialData));
 	//
 	MaterialData* materialData = nullptr;
 	//
@@ -1057,7 +1057,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region スプライトのマテリアルリソースの設定
 
 	//
-	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(MaterialData));
+	ID3D12Resource* materialResourceSprite = CreateBufferResource(device.Get(), sizeof(MaterialData));
 	//
 	MaterialData* materialDataSprite = nullptr;
 	//
@@ -1074,7 +1074,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma region TriangleスプライトのvertexResourceの設定
 
 	//
-	ID3D12Resource* vertexResourceTriangle = CreateBufferResource(device, sizeof(VertexData) * 6);
+	ID3D12Resource* vertexResourceTriangle = CreateBufferResource(device.Get(), sizeof(VertexData) * 6);
 
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewTriangle{};
@@ -1114,7 +1114,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
-	ID3D12Resource* indexResourceSprite = CreateBufferResource(device, sizeof(uint32_t) * 6);
+	ID3D12Resource* indexResourceSprite = CreateBufferResource(device.Get(), sizeof(uint32_t) * 6);
 	
 	uint32_t* indexSpriteData = nullptr;
 	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(indexSpriteData));
@@ -1135,7 +1135,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma region スプライトのvertexResouceの設定
 	//
-	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
+	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device.Get(), sizeof(VertexData) * 6);
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
 	//
@@ -1166,7 +1166,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//
 	uint32_t kSubdivision = 16;
 
-	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
+	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device.Get(), sizeof(VertexData) * kSubdivision * kSubdivision * 6);
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
@@ -1276,7 +1276,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	}
 #pragma endregion
 
-	ID3D12Resource* directionalLightResource = CreateBufferResource(device, sizeof(DirectionalLight));
+	ID3D12Resource* directionalLightResource = CreateBufferResource(device.Get(), sizeof(DirectionalLight));
 	//
 	DirectionalLight* directionalLightData = nullptr;
 	//
@@ -1318,7 +1318,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	ImGui::CreateContext();
 	ImGui::StyleColorsDark();
 	ImGui_ImplWin32_Init(hwnd);
-	ImGui_ImplDX12_Init(device,
+	ImGui_ImplDX12_Init(device.Get(),
 		swapChainDesc.BufferCount,
 		rtvDesc.Format,
 		srvDescriptorHeap,
