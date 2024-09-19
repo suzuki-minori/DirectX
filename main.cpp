@@ -1530,7 +1530,7 @@ D3DLeakChecker leakChecker;
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
 
 			//描画
-			//commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
+			commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
 #pragma endregion
 
 #pragma region トランジションバリアの設定
