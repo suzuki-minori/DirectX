@@ -1393,6 +1393,9 @@ D3DLeakChecker leakChecker;
 			ImGui::DragFloat3("*rotate", &transform.rotate.x);//DragFloatにすればカーソルでも値を変更できる
 			ImGui::DragFloat3("*translate", &transform.translate.x);
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+			ImGui::DragFloat2("sprite.transform", &transformSprite.translate.x, 1.0f);
+			ImGui::DragFloat2("sprite.scale", &transformSprite.scale.x, 0.01f);
+			ImGui::DragFloat2("sprite.rotate", &transformSprite.rotate.x, 0.01f);
 			ImGui::SliderAngle("Angle", &transform.rotate.y);
 			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
