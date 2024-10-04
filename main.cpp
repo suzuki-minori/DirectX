@@ -649,7 +649,8 @@ D3DLeakChecker leakChecker;
 
 #pragma region obj読み込み
 
-	ModelData modelData = LoadObjFile("resources", "axis.obj");
+	//ModelData modelData = LoadObjFile("resources", "axis.obj");
+	ModelData modelData = LoadObjFile("resources", "plane.obj");
 
 	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceModel = CreateBufferResource(device.Get(), sizeof(VertexData) * modelData.vertices.size());
 	////
@@ -1526,7 +1527,7 @@ D3DLeakChecker leakChecker;
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewModel);
 
 			//
-			//commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 
 #pragma region スプライト描画
 			//vbvの設定
