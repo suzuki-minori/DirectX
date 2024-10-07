@@ -1,8 +1,7 @@
 #include "Input.h"
-#define DIRECTINPUT_VERSION 0x0800
-#include<dinput.h>
+
 #include<cassert>
-#include<wrl.h>
+
 
 using namespace Microsoft::WRL;
 #pragma comment(lib,"dinput8.lib")
@@ -33,5 +32,11 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 
 void Input::Update()
 {
+	//
+	keyboard->Acquire();
+	//
+	BYTE key[256] = {};
+	keyboard->GetDeviceState(sizeof(key),key);
+
 }
 

@@ -1415,6 +1415,8 @@ D3DLeakChecker leakChecker;
 			//BYTE key[256] = {};
 			//keyboard->GetDeviceState(sizeof(key), key);
 
+			//input->Update();
+
 			//if (key[DIK_0]) {
 			//	OutputDebugStringA("hit 0\n");
 			//}
