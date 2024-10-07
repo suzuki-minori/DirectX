@@ -649,7 +649,6 @@ D3DLeakChecker leakChecker;
 
 #pragma region obj読み込み
 
-	//ModelData modelData = LoadObjFile("resources", "axis.obj");
 	ModelData modelData = LoadObjFile("resources", "plane.obj");
 
 	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceModel = CreateBufferResource(device.Get(), sizeof(VertexData) * modelData.vertices.size());
@@ -1411,7 +1410,8 @@ D3DLeakChecker leakChecker;
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
-			//ImGui::ColorEdit4()
+			//ImGui::ColorEdit4("modelBlend"&)
+
 			ImGui::End();
 
 
@@ -1544,7 +1544,7 @@ D3DLeakChecker leakChecker;
 			commandList->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
 
 			//描画
-			commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
+			//commandList->DrawIndexedInstanced(6, 1, 0, 0,0);
 #pragma endregion
 
 #pragma region トランジションバリアの設定
