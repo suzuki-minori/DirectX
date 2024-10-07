@@ -1,5 +1,4 @@
 #include "Input.h"
-
 #include<cassert>
 
 
@@ -30,13 +29,26 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 
 }
 
+bool Input::PushKey(BYTE keyNumber)
+{
+	//
+	if (key[keyNumber]) {
+		return true;
+	}
+
+	return false;
+}
+
 void Input::Update()
 {
 	//
 	keyboard->Acquire();
 	//
-	BYTE key[256] = {};
+	//BYTE key[256] = {};
 	keyboard->GetDeviceState(sizeof(key),key);
-
+	//
+	if (input->PushKey[DIK_0]) {
+		OutputDebugStringA("hit 0\n");
+	}
 }
 
