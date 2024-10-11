@@ -1410,7 +1410,9 @@ D3DLeakChecker leakChecker;
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
-			//ImGui::ColorEdit4("modelBlend"&)
+			ImGui::DragFloat4("*color", &materialData->color.x,0.01);
+			ImGui::DragFloat("intensity",&directionalLightData->intensity);
+			//ImGui::ColorEdit4("alpha",);
 
 			ImGui::End();
 
