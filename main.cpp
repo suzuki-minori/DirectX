@@ -1412,7 +1412,8 @@ D3DLeakChecker leakChecker;
 			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
 			ImGui::DragFloat4("*color", &materialData->color.x,0.01);
 			ImGui::DragFloat("intensity",&directionalLightData->intensity);
-			//ImGui::ColorEdit4("alpha",);
+
+
 
 			ImGui::End();
 
