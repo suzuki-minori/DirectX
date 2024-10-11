@@ -649,7 +649,7 @@ D3DLeakChecker leakChecker;
 
 #pragma region obj読み込み
 
-	ModelData modelData = LoadObjFile("resources", "plane.obj");
+	ModelData modelData = LoadObjFile("resources", "fence.obj");
 
 	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceModel = CreateBufferResource(device.Get(), sizeof(VertexData) * modelData.vertices.size());
 	////
@@ -1410,7 +1410,7 @@ D3DLeakChecker leakChecker;
 			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
 			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
-			ImGui::DragFloat4("*color", &materialData->color.x,0.01);
+			ImGui::DragFloat4("*color", &materialData->color.x);
 			ImGui::DragFloat("intensity",&directionalLightData->intensity);
 
 
