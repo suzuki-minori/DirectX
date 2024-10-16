@@ -1530,7 +1530,7 @@ D3DLeakChecker leakChecker;
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewModel);
 
 			//
-			commandList->DrawInstanced(UINT(modelData.vertices.size()), 10, 0, 0);
+			commandList->DrawInstanced(UINT(modelData.vertices.size()), instanceCount, 0, 0);
 
 #pragma region スプライト描画
 			//vbvの設定
