@@ -618,16 +618,16 @@ D3DLeakChecker leakChecker;
 
 
 
-#ifdef _inputDevice
+
 
 	Input* input = nullptr;
 	//
 	input = new Input();
-	input->Initialize(w.hInstance,hwnd);
+	input->Initialize(hInstance,hwnd);
 	//
 	delete input;
 
-#endif // 
+
 
 
 
