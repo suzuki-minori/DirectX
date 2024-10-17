@@ -623,9 +623,9 @@ D3DLeakChecker leakChecker;
 	Input* input = nullptr;
 	//
 	input = new Input();
-	input->Initialize(hInstance,hwnd);
+	input->Initialize(wc.hInstance,hwnd);
 	//
-	delete input;
+	
 
 
 
@@ -1380,7 +1380,7 @@ D3DLeakChecker leakChecker;
 	//
 	bool useMonsterBall = true;
 
-
+	delete input;
 
 
 
