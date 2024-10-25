@@ -1383,7 +1383,7 @@ D3DLeakChecker leakChecker;
 
 
 
-	delete input;
+	
 
 
 
@@ -1619,7 +1619,7 @@ D3DLeakChecker leakChecker;
 		}
 	}
 
-
+	delete input;
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
