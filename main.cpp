@@ -1398,11 +1398,18 @@ D3DLeakChecker leakChecker;
 			DispatchMessage(&msg);
 		}
 		else {
-			input->Update();
 			
+			input->Update();
+
+			//押した瞬間
+			if (input->TriggerKey(DIK_0)) {
+				OutputDebugStringA("hit 0\n");
+			}
+			//押している間
 			if (input->PushKey(DIK_0)) {
 				OutputDebugStringA("hit 0\n");
 			}
+
 			//p16
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();

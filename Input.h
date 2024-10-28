@@ -18,10 +18,14 @@ public:
 	void Initialize(HINSTANCE hInstance, HWND hwnd);
 
 	bool PushKey(BYTE keyNumber);
+	bool TriggerKey(BYTE keyNumber);
 
 private:
 
+	ComPtr<IDirectInput8> directInput;
 	ComPtr<IDirectInputDevice8>keyboard;
 	BYTE key[256] = {};
+	BYTE keyPre[256] = {};
+
 };
 

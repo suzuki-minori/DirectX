@@ -11,7 +11,7 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd)
 {
 	HRESULT result;
 
-	ComPtr<IDirectInput8> directInput = nullptr;
+	
 	result = DirectInput8Create(hInstance, DIRECTINPUT_VERSION, IID_IDirectInput8, (void**)&directInput, nullptr);
 	assert(SUCCEEDED(result));
 	
@@ -39,8 +39,21 @@ bool Input::PushKey(BYTE keyNumber)
 	return false;
 }
 
+bool Input::TriggerKey(BYTE keyNumber)
+{
+	//
+	if (!keyPre[keyNumber]&& key[keyNumber]) {
+		return true;
+	}
+
+	return false;
+}
+
 void Input::Update()
 {
+	//HRESULT result;
+	//
+	memcpy(keyPre, key, sizeof(key));
 	//
 	keyboard->Acquire();
 	//
