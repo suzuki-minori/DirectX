@@ -1406,7 +1406,7 @@ D3DLeakChecker leakChecker;
 				OutputDebugStringA("hit 0\n");
 			}
 			//押している間
-			if (input->PushKey(DIK_0)) {
+			if (input->PushKey(DIK_1)) {
 				OutputDebugStringA("hit 0\n");
 			}
 
