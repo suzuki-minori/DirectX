@@ -621,10 +621,10 @@ D3DLeakChecker leakChecker;
 
 
 	Input* input = nullptr;
-	//
+	
 	input = new Input();
 	input->Initialize(wc.hInstance,hwnd);
-	//
+	
 	
 
 
@@ -835,6 +835,11 @@ D3DLeakChecker leakChecker;
 	assert(SUCCEEDED(hr));
 	hr = swapChain->GetBuffer(1, IID_PPV_ARGS(&swapChainResources[1]));
 	assert(SUCCEEDED(hr));
+
+	//入力
+	//Input* input = nullptr;
+	//input = new Input();
+	//input->Initialize(wc.hInstance, hwnd);
 
 	//renderTargetViewの設定
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
@@ -1380,7 +1385,7 @@ D3DLeakChecker leakChecker;
 	//
 	bool useMonsterBall = true;
 
-	delete input;
+	
 
 
 
@@ -1393,7 +1398,11 @@ D3DLeakChecker leakChecker;
 			DispatchMessage(&msg);
 		}
 		else {
-
+			input->Update();
+			
+			if (input->PushKey(DIK_0)) {
+				OutputDebugStringA("hit 0\n");
+			}
 			//p16
 			ImGui_ImplDX12_NewFrame();
 			ImGui_ImplWin32_NewFrame();
@@ -1415,7 +1424,7 @@ D3DLeakChecker leakChecker;
 			//BYTE key[256] = {};
 			//keyboard->GetDeviceState(sizeof(key), key);
 
-			input->Update();
+			
 
 			
 
@@ -1619,7 +1628,7 @@ D3DLeakChecker leakChecker;
 		}
 	}
 
-
+	delete input;
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
