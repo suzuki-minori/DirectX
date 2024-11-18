@@ -1,5 +1,5 @@
-#include<Windows.h>
-#include<cstdint>
+//#include<Windows.h>
+//#include<cstdint>
 #include<string>
 #include<format>
 #include<d3d12.h>
@@ -33,10 +33,10 @@
 #pragma comment(lib,"dinput8.lib")
 #pragma comment(lib,"dxguid.lib")
 
-#include"externals/imgui/imgui.h"
-#include"externals/imgui/imgui_impl_dx12.h"
-#include"externals/imgui/imgui_impl_win32.h"
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+//#include"externals/imgui/imgui.h"
+//#include"externals/imgui/imgui_impl_dx12.h"
+//#include"externals/imgui/imgui_impl_win32.h"
+//extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //class ResourceObject {
 //public:
