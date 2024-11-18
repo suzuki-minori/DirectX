@@ -39,14 +39,29 @@ void WinApi::Initialize()
 
 }
 
-void WinApi::Update()
-{
-}
+
 
 void WinApi::Finalize()
 {
 	CloseWindow(hwnd);
 	CoUninitialize();
+}
+
+bool WinApi::ProcessMessage()
+{
+	MSG msg{};
+
+	if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	if (msg.message == WM_QUIT) {
+		return false;
+	}
+
+
+	return false;
 }
 
 //

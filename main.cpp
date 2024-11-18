@@ -873,7 +873,7 @@ D3DLeakChecker leakChecker;
 	//出力ウィンドウへの文字出力
 	Log("Hello,DirectX!\n");
 
-	MSG msg{};
+	//MSG msg{};
 
 	//初期値0でFenceを作る
 	Microsoft::WRL::ComPtr < ID3D12Fence> fence = nullptr;
@@ -1402,11 +1402,16 @@ D3DLeakChecker leakChecker;
 
 
 
-	while (msg.message != WM_QUIT) {
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+	while (true) {
+		/*if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
+		}*/
+		if (winApi->ProcessMessage()) {
+			//
+			break;
 		}
+
 		else {
 			
 			input->Update();

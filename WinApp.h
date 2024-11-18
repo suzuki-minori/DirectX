@@ -22,9 +22,12 @@ public:
 	//
 	void Initialize();
 	//
-	void Update();
+	
 	//
 	void Finalize();
+
+	//
+	bool ProcessMessage();
 
 
 	//
