@@ -20,9 +20,9 @@
 #include<math.h>
 #include<fstream>
 #include<sstream>
-#include<wrl.h>
-#define DIRECTINPUT_VERSION 0x0800
-#include<dinput.h>
+//#include<wrl.h>
+//#define DIRECTINPUT_VERSION 0x0800
+//#include<dinput.h>
 #include "Input.h"
 #include"WinApp.h"
 
@@ -30,8 +30,8 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"dxguid.lib")
 #pragma comment(lib,"dxcompiler.lib")
-#pragma comment(lib,"dinput8.lib")
-#pragma comment(lib,"dxguid.lib")
+//#pragma comment(lib,"dinput8.lib")
+//#pragma comment(lib,"dxguid.lib")
 
 //#include"externals/imgui/imgui.h"
 //#include"externals/imgui/imgui_impl_dx12.h"
