@@ -1,5 +1,4 @@
 #include "WinApp.h"
-#include<cstdint>
 #include<cassert>
 
 
@@ -42,6 +41,12 @@ void WinApi::Initialize()
 
 void WinApi::Update()
 {
+}
+
+void WinApi::Finalize()
+{
+	CloseWindow(hwnd);
+	CoUninitialize();
 }
 
 //

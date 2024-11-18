@@ -1,4 +1,6 @@
 #pragma once
+
+#include<cstdint>
 #include<Windows.h>
 #include"externals/imgui/imgui.h"
 #include"externals/imgui/imgui_impl_dx12.h"
@@ -21,6 +23,9 @@ public:
 	void Initialize();
 	//
 	void Update();
+	//
+	void Finalize();
+
 
 	//
 	HWND GetHwnd()const { return hwnd; }

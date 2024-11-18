@@ -3,6 +3,7 @@
 #include<wrl.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include<dinput.h>
+#include"WinApp.h"
 
 class Input
 {
@@ -15,7 +16,7 @@ public:
 
 public:
 
-	void Initialize(HINSTANCE hInstance, HWND hwnd);
+	void Initialize(WinApi* winApi);
 
 	bool PushKey(BYTE keyNumber);
 	bool TriggerKey(BYTE keyNumber);
@@ -26,6 +27,8 @@ private:
 	ComPtr<IDirectInputDevice8>keyboard;
 	BYTE key[256] = {};
 	BYTE keyPre[256] = {};
+	//WinApi依存処理
+	WinApi* winApi_ = nullptr;
 
 };
 

@@ -633,7 +633,7 @@ D3DLeakChecker leakChecker;
 	Input* input = nullptr;
 	
 	input = new Input();
-	input->Initialize(winApi->GetInstance(), winApi->GetHwnd());
+	input->Initialize(winApi);
 	
 	
 
@@ -1646,7 +1646,8 @@ D3DLeakChecker leakChecker;
 	}
 
 	delete input;
-	delete winApi;
+	
+	//winApi = nullptr;
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
@@ -1696,9 +1697,9 @@ D3DLeakChecker leakChecker;
 #ifdef _DEBUG
 	/*debugController->Release();*/
 #endif
-	CloseWindow(winApi->GetHwnd());
-
-
+	//CloseWindow(winApi->GetHwnd());
+	winApi->Finalize();
+	delete winApi;
 
 
 
@@ -1716,7 +1717,7 @@ D3DLeakChecker leakChecker;
 	//}
 
 
-	CoUninitialize();
+	//CoUninitialize();
 
 
 	return 0;
