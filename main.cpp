@@ -1,5 +1,5 @@
 #include<Windows.h>
-#include<cstdint>
+//#include<cstdint>
 #include<string>
 #include<format>
 #include<d3d12.h>
@@ -24,6 +24,7 @@
 #define DIRECTINPUT_VERSION 0x0800
 #include<dinput.h>
 #include "Input.h"
+#include"WinApp.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -515,14 +516,23 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 D3DLeakChecker leakChecker;
 
-	CoInitializeEx(0, COINIT_MULTITHREADED);
+	//CoInitializeEx(0, COINIT_MULTITHREADED);
 
 
 
 
 
 #pragma region ウィンドウの生成
-	WNDCLASS wc{};
+	
+	//ポインタ
+	WinApi* winApi = nullptr;
+	//
+	winApi = new WinApi();
+	winApi->Initialize();
+
+
+
+	/*WNDCLASS wc{};
 	wc.lpfnWndProc = WindowProc;
 	wc.lpszClassName = L"CG2WindowClass";
 	wc.hInstance = GetModuleHandle(nullptr);
@@ -550,7 +560,7 @@ D3DLeakChecker leakChecker;
 		wc.hInstance,
 		nullptr);
 
-	ShowWindow(hwnd, SW_SHOW);
+	ShowWindow(hwnd, SW_SHOW);*/
 
 
 
@@ -1636,6 +1646,7 @@ D3DLeakChecker leakChecker;
 	}
 
 	delete input;
+	delete winApi;
 
 	//出力ウィンドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
