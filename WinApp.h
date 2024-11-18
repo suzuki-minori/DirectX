@@ -9,8 +9,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 class WinApi
 {
 public:
+	//
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+	static const int32_t kClientWidth = 1280;
+	static const int32_t kClientHeight = 720;
 
 
 public:
@@ -19,11 +22,17 @@ public:
 	//
 	void Update();
 
-
+	//
+	HWND GetHwnd()const { return hwnd; }
+	//
+	HINSTANCE GetInstance()const { return wc.hInstance; }
 
 
 private:
-
+	//
+	HWND hwnd = nullptr;
+	//
+	WNDCLASS wc{};
 
 
 
