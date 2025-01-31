@@ -535,7 +535,7 @@ D3DLeakChecker leakChecker;
 
 	HWND hwnd = CreateWindow(
 		wc.lpszClassName,
-		L"CG2",
+		L"LE2D_11_スズキ_ミノリ",
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
