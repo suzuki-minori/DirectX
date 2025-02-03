@@ -2,7 +2,7 @@
 #include<cassert>
 
 
-void WinApi::Initialize()
+void WinApp::Initialize()
 {
 	HRESULT hr= CoInitializeEx(0, COINIT_MULTITHREADED);
 
@@ -41,13 +41,13 @@ void WinApi::Initialize()
 
 
 
-void WinApi::Finalize()
+void WinApp::Finalize()
 {
 	CloseWindow(hwnd);
 	CoUninitialize();
 }
 
-bool WinApi::ProcessMessage()
+bool WinApp::ProcessMessage()
 {
 	MSG msg{};
 
@@ -65,7 +65,7 @@ bool WinApi::ProcessMessage()
 }
 
 //
-LRESULT CALLBACK WinApi::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT CALLBACK WinApp::WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)){
 		return true;

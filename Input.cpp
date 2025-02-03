@@ -7,7 +7,7 @@ using namespace Microsoft::WRL;
 #pragma comment(lib,"dxguid.lib")
 
 
-void Input::Initialize(WinApi* winApi)
+void Input::Initialize(WinApp* winApi)
 {
 	HRESULT result;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include"StringUtility.h"
 #include<cstdint>
 #include<Windows.h>
 #include"externals/imgui/imgui.h"
@@ -8,11 +9,12 @@
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 
-class WinApi
+class WinApp
 {
 public:
 	//
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
 
 	static const int32_t kClientWidth = 1280;
 	static const int32_t kClientHeight = 720;

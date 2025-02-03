@@ -106,9 +106,11 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClCompile Include="externals\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="light.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MatrixMath.cpp" />
     <ClCompile Include="MyMath.cpp" />
+    <ClCompile Include="StringUtility.cpp" />
     <ClCompile Include="WinApp.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -137,10 +139,12 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="externals\imgui\imstb_truetype.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="light.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="Matrix3x3.h" />
     <ClInclude Include="Matrix4x4.h" />
     <ClInclude Include="MatrixMath.h" />
     <ClInclude Include="MyMath.h" />
+    <ClInclude Include="StringUtility.h" />
     <ClInclude Include="Transform.h" />
     <ClInclude Include="transformationMatrix.h" />
     <ClInclude Include="Vector3.h" />

@@ -16,7 +16,7 @@ public:
 
 public:
 
-	void Initialize(WinApi* winApi);
+	void Initialize(WinApp* winApi);
 
 	bool PushKey(BYTE keyNumber);
 	bool TriggerKey(BYTE keyNumber);
@@ -28,7 +28,7 @@ private:
 	BYTE key[256] = {};
 	BYTE keyPre[256] = {};
 	//WinApi依存処理
-	WinApi* winApi_ = nullptr;
+	WinApp* winApi_ = nullptr;
 
 };
 
