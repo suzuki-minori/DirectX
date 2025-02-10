@@ -334,6 +334,92 @@ void DirectXBase::RenderTargetViewInitialize() {
 
 }
 
+void DirectXBase::PreDraw()
+{
+	//
+	UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+	//
+	D3D12_RESOURCE_BARRIER barrier{};
+	//
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	//
+	barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	//
+	barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
+	//
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+	//
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+	//
+	dxBase->GetCommandList()->ResourceBarrier(1, &barrier);
+
+
+
+	dxBase->GetCommandList()->OMSetRenderTargets(1, rtvHandles[backBufferIndex], false, &dsvHandle);
+
+	float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
+	dxBase->GetCommandList()->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
+	//
+	dxBase->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+
+
+	//ビューポートの設定
+	dxBase->GetCommandList()->RSSetViewports(1, &viewport);//
+	dxBase->GetCommandList()->RSSetScissorRects(1, &dxBase->GetScissorRect());//
+}
+
+void DirectXBase::PostDraw()
+{
+	//
+	UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+
+#pragma region トランジションバリアの設定
+
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxBase->GetCommandList());
+
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+	//
+	dxBase->GetCommandList()->ResourceBarrier(1, &barrier);
+
+#pragma endregion
+
+	//コマンドリストの内容を確定
+	hr = dxBase->GetCommandList()->Close();
+	assert(SUCCEEDED(hr));
+
+	//コマンドリストの実行
+	Microsoft::WRL::ComPtr < ID3D12CommandList> commandLists[] = { dxBase->GetCommandList() };
+	dxBase->GetCommandQueue()->ExecuteCommandLists(1, commandLists->GetAddressOf());
+	//
+	swapChain->Present(1, 0);
+
+	//
+	fenceValue++;
+	//
+	dxBase->GetCommandQueue()->Signal(dxBase->GetFence(), dxBase->GetFenceValue());
+	//
+	//
+	if (dxBase->GetFence()->GetCompletedValue() < dxBase->GetFenceValue()) {
+		//
+		dxBase->GetFence()->SetEventOnCompletion(dxBase->GetFenceValue(), fenceEvent);
+		//
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	//
+	HRESULT hr;
+	hr = dxBase->GetCommandAllocator()->Reset();
+	assert(SUCCEEDED(hr));
+	hr = dxBase->GetCommandList()->Reset(dxBase->GetCommandAllocator(), nullptr);
+	assert(SUCCEEDED(hr));
+
+
+
+}
+
 D3D12_CPU_DESCRIPTOR_HANDLE DirectXBase::GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index)
 {
 	return D3D12_CPU_DESCRIPTOR_HANDLE();

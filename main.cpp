@@ -1297,204 +1297,207 @@ D3DLeakChecker leakChecker;
 
 
 
-//	while (true) {
-//		/*if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-//			TranslateMessage(&msg);
-//			DispatchMessage(&msg);
-//		}*/
-//		if (winApi->ProcessMessage()) {
-//			//
-//			break;
-//		}
-//
-//		else {
-//			
-//			input->Update();
-//
-//			//押した瞬間
-//			if (input->TriggerKey(DIK_0)) {
-//				OutputDebugStringA("hit 0\n");
-//			}
-//			//押している間
-//			if (input->PushKey(DIK_1)) {
-//				OutputDebugStringA("hit 1\n");
-//			}
-//
-//			//p16
-//			ImGui_ImplDX12_NewFrame();
-//			ImGui_ImplWin32_NewFrame();
-//			ImGui::NewFrame();
-//
-//			//			ImGui::ShowDemoWindow();
-//						/*ImGui::Begin("Window");
-//						ImGui::DragFloat3("color", &materialData->x, 0.01f);
-//						ImGui::End();*/
-//			
-//			Matrix4x4 uvTransformMatrix = MatrixMath::MakeScaleMatrix(uvTransformSprite.scale);
-//			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeRotateZMatrix(uvTransformSprite.rotate.z));
-//			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeTranslateMatrix(uvTransformSprite.translate));
-//			materialDataSprite->uvTransform = uvTransformMatrix;
-//
-//			
-//			//keyboard->Acquire();
-//
-//			//BYTE key[256] = {};
-//			//keyboard->GetDeviceState(sizeof(key), key);
-//
-//			
-//
-//			
-//
-//
-//			
-//			ImGui::Begin("texture");
-//			ImGui::DragFloat3("*scale", &transform.scale.x);//InputFloatだと直入力のみ有効
-//			ImGui::DragFloat3("*rotate", &transform.rotate.x);//DragFloatにすればカーソルでも値を変更できる
-//			ImGui::DragFloat3("*translate", &transform.translate.x);
-//			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-//			ImGui::DragFloat2("sprite.transform", &transformSprite.translate.x, 1.0f);
-//			ImGui::DragFloat2("sprite.scale", &transformSprite.scale.x, 0.01f);
-//			ImGui::DragFloat2("sprite.rotate", &transformSprite.rotate.x, 0.01f);
-//			ImGui::SliderAngle("Angle", &transform.rotate.y);
-//			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-//			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-//			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-//			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
-//			ImGui::End();
-//
-//
-//			//
-//			Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeaps[] = { dxBase->GetSrvDescriptorHeap() };
-//			dxBase->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps->GetAddressOf());
-//
-//			//transform.rotate.y += 0.03f;
-//			Transform cameraTransform{ {1.0f,1.0f,1.0f} ,{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
-//
-//
-//			Matrix4x4 worldMatrix = MatrixMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
-//			Matrix4x4 cameraMatrix = MatrixMath::MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-//			Matrix4x4 viewMatrix = MatrixMath::Inverse(cameraMatrix);
-//			Matrix4x4 projectionMatrix = MatrixMath::MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
-//			Matrix4x4 worldViewProjectionMatrix = MatrixMath::Multiply(worldMatrix, MatrixMath::Multiply(viewMatrix, projectionMatrix));
-//			transformationMatrixData->WVP = worldViewProjectionMatrix;
-//			transformationMatrixData->World = worldMatrix;
-//
-//			//
-//			Matrix4x4 worldMatrixSprite = MatrixMath::MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-//			Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
-//			Matrix4x4 projectionMatrixSprite = MatrixMath::MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
-//			Matrix4x4 worldViewProjectionMatrixSprite = MatrixMath::Multiply(worldMatrixSprite, MatrixMath::Multiply(viewMatrixSprite, projectionMatrixSprite));
-//			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
-//			transformationMatrixDataSprite->World = worldMatrixSprite;
-//
-//
-//			//
-//			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxBase->GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
-//
-//
-//			//描画。処理しない。
-//
-//			ImGui::Render();
-//
-//			//
-//			UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
-//			//
-//			D3D12_RESOURCE_BARRIER barrier{};
-//			//
-//			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-//			//
-//			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-//			//
-//			barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
-//			//
-//			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-//			//
-//			barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-//			//
-//			dxBase->GetCommandList()->ResourceBarrier(1, &barrier);
-//
-//
-//
-//			dxBase->GetCommandList()->OMSetRenderTargets(1, rtvHandles[backBufferIndex], false, &dsvHandle);
-//
-//			////
-//			//commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
-//			//
-//			float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
-//			dxBase->GetCommandList()->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
-//			//
-//			dxBase->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
-//
-//			
-//
-//			//ビューポートの設定
-//			dxBase->GetCommandList()->RSSetViewports(1, &viewport);//
-//			dxBase->GetCommandList()->RSSetScissorRects(1, &dxBase->GetScissorRect());//
-//			//
-//			dxBase->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
-//			dxBase->GetCommandList()->SetPipelineState(graphicPipeLineState.Get());
-//			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-//			//
-//			dxBase->GetCommandList()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-//
-//			//マテリアルリソースの設定
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
-//
-//			//wvpリソースの設定
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-//
-//
-//
-//			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
-//
-//
-//			//
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-//
-//
-//			//
-//			//commandList->DrawInstanced(6, 1, 0, 0);
-//
-//
-//#pragma region 球体の描画
-//
-//			//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
-//
-//			//
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
-//
-//			//
-//			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU[1] : textureSrvHandleGPU[0]);
-//
-//			//
-//			//commandList->DrawInstanced((kSubdivision * kSubdivision * 6), 1, 0, 0);
-//#pragma endregion
-//			////
-//			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
-//
-//			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewModel);
-//
-//			//
-//			dxBase->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-//
-//#pragma region スプライト描画
-//			//vbvの設定
-//			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-//			//
-//			dxBase->GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
-//			
-//			//マテリアルリソースの設定
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-//
-//			//wvpの設定
-//			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-//			//srvのディスクリプターテーブルの設定
-//			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
-//
-//			//描画
-//			dxBase->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0,0);
-//#pragma endregion
-//
+	while (true) {
+		/*if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}*/
+		if (winApi->ProcessMessage()) {
+			//
+			break;
+		}
+
+		else {
+			
+			input->Update();
+
+			//押した瞬間
+			if (input->TriggerKey(DIK_0)) {
+				OutputDebugStringA("hit 0\n");
+			}
+			//押している間
+			if (input->PushKey(DIK_1)) {
+				OutputDebugStringA("hit 1\n");
+			}
+
+			//p16
+			ImGui_ImplDX12_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			//			ImGui::ShowDemoWindow();
+						/*ImGui::Begin("Window");
+						ImGui::DragFloat3("color", &materialData->x, 0.01f);
+						ImGui::End();*/
+			
+			Matrix4x4 uvTransformMatrix = MatrixMath::MakeScaleMatrix(uvTransformSprite.scale);
+			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeRotateZMatrix(uvTransformSprite.rotate.z));
+			uvTransformMatrix = MatrixMath::Multiply(uvTransformMatrix, MatrixMath::MakeTranslateMatrix(uvTransformSprite.translate));
+			materialDataSprite->uvTransform = uvTransformMatrix;
+
+			
+			//keyboard->Acquire();
+
+			//BYTE key[256] = {};
+			//keyboard->GetDeviceState(sizeof(key), key);
+
+			
+
+			
+
+
+			
+			ImGui::Begin("texture");
+			ImGui::DragFloat3("*scale", &transform.scale.x);//InputFloatだと直入力のみ有効
+			ImGui::DragFloat3("*rotate", &transform.rotate.x);//DragFloatにすればカーソルでも値を変更できる
+			ImGui::DragFloat3("*translate", &transform.translate.x);
+			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
+			ImGui::DragFloat2("sprite.transform", &transformSprite.translate.x, 1.0f);
+			ImGui::DragFloat2("sprite.scale", &transformSprite.scale.x, 0.01f);
+			ImGui::DragFloat2("sprite.rotate", &transformSprite.rotate.x, 0.01f);
+			ImGui::SliderAngle("Angle", &transform.rotate.y);
+			ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
+			ImGui::SliderAngle("Rotate", &transformSprite.rotate.y);
+			ImGui::End();
+
+
+			//
+			Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeaps[] = { dxBase->GetSrvDescriptorHeap() };
+			dxBase->GetCommandList()->SetDescriptorHeaps(1, descriptorHeaps->GetAddressOf());
+
+			//transform.rotate.y += 0.03f;
+			Transform cameraTransform{ {1.0f,1.0f,1.0f} ,{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
+
+
+			Matrix4x4 worldMatrix = MatrixMath::MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
+			Matrix4x4 cameraMatrix = MatrixMath::MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+			Matrix4x4 viewMatrix = MatrixMath::Inverse(cameraMatrix);
+			Matrix4x4 projectionMatrix = MatrixMath::MakePerspectiveFovMatrix(0.45f, float(WinApp::kClientWidth) / float(WinApp::kClientHeight), 0.1f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrix = MatrixMath::Multiply(worldMatrix, MatrixMath::Multiply(viewMatrix, projectionMatrix));
+			transformationMatrixData->WVP = worldViewProjectionMatrix;
+			transformationMatrixData->World = worldMatrix;
+
+			//
+			Matrix4x4 worldMatrixSprite = MatrixMath::MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+			Matrix4x4 viewMatrixSprite = MatrixMath::MakeIdentity4x4();
+			Matrix4x4 projectionMatrixSprite = MatrixMath::MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kClientWidth), float(WinApp::kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSprite = MatrixMath::Multiply(worldMatrixSprite, MatrixMath::Multiply(viewMatrixSprite, projectionMatrixSprite));
+			transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
+			transformationMatrixDataSprite->World = worldMatrixSprite;
+
+
+			//
+			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxBase->GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+
+
+			//描画。処理しない。
+
+			ImGui::Render();
+
+			////
+			//UINT backBufferIndex = swapChain->GetCurrentBackBufferIndex();
+			////
+			//D3D12_RESOURCE_BARRIER barrier{};
+			////
+			//barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			////
+			//barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+			////
+			//barrier.Transition.pResource = swapChainResources[backBufferIndex].Get();
+			////
+			//barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+			////
+			//barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			////
+			//dxBase->GetCommandList()->ResourceBarrier(1, &barrier);
+
+
+
+			//dxBase->GetCommandList()->OMSetRenderTargets(1, rtvHandles[backBufferIndex], false, &dsvHandle);
+
+			//////
+			////commandList->OMSetRenderTargets(1, &rtvHandles[backBufferIndex], false, nullptr);
+			////
+			//float clearColor[] = { 0.1f,0.25f,0.5f,1.0f };
+			//dxBase->GetCommandList()->ClearRenderTargetView(rtvHandles[backBufferIndex], clearColor, 0, nullptr);
+			////
+			//dxBase->GetCommandList()->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
+
+			//
+
+			////ビューポートの設定
+			//dxBase->GetCommandList()->RSSetViewports(1, &viewport);//
+			//dxBase->GetCommandList()->RSSetScissorRects(1, &dxBase->GetScissorRect());//
+			//
+
+			dxBase->PreDraw();
+
+			dxBase->GetCommandList()->SetGraphicsRootSignature(rootSignature.Get());
+			dxBase->GetCommandList()->SetPipelineState(graphicPipeLineState.Get());
+			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+			//
+			dxBase->GetCommandList()->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			//マテリアルリソースの設定
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+
+			//wvpリソースの設定
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+
+
+
+			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[1]);
+
+
+			//
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+
+
+			//
+			//commandList->DrawInstanced(6, 1, 0, 0);
+
+
+#pragma region 球体の描画
+
+			//commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
+
+			//
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, wvpResource->GetGPUVirtualAddress());
+
+			//
+			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU[1] : textureSrvHandleGPU[0]);
+
+			//
+			//commandList->DrawInstanced((kSubdivision * kSubdivision * 6), 1, 0, 0);
+#pragma endregion
+			////
+			//commandList->SetGraphicsRootConstantBufferView(1, materialResource->GetGPUVirtualAddress());
+
+			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewModel);
+
+			//
+			dxBase->GetCommandList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+
+#pragma region スプライト描画
+			//vbvの設定
+			dxBase->GetCommandList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+			//
+			dxBase->GetCommandList()->IASetIndexBuffer(&indexBufferViewSprite);
+			
+			//マテリアルリソースの設定
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+
+			//wvpの設定
+			dxBase->GetCommandList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+			//srvのディスクリプターテーブルの設定
+			dxBase->GetCommandList()->SetGraphicsRootDescriptorTable(2, textureSrvHandleGPU[0]);
+
+			//描画
+			dxBase->GetCommandList()->DrawIndexedInstanced(6, 1, 0, 0,0);
+#pragma endregion
+
 //#pragma region トランジションバリアの設定
 //			barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
 //
@@ -1539,12 +1542,12 @@ D3DLeakChecker leakChecker;
 //			assert(SUCCEEDED(hr));
 //
 //
-//
-//
-//
-//
-//		}
-//	}
+
+
+			dxBase->PostDraw();
+
+		}
+	}
 
 	delete input;
 	

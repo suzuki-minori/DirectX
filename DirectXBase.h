@@ -89,6 +89,9 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandles()const { return rtvHandles[2]; }
 
+	//ID3D12Device* GetDevice()const { return device.Get(); }
+	//ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
+
 
 private:
 	//
@@ -137,7 +140,7 @@ private:
 
 	Microsoft::WRL::ComPtr < ID3D12Fence> fence = nullptr;
 	
-	uint64_t fenceValue = 0;
+	static const uint64_t fenceValue = 0;
 
 	//
 	D3D12_VIEWPORT viewport{};
@@ -179,6 +182,13 @@ private:
 
 	void RenderTargetViewInitialize();
 	
+
+	//
+	void PreDraw();
+	//
+	void PostDraw();
+
+
 	//
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr < ID3D12DescriptorHeap>descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
