@@ -14,6 +14,13 @@ struct DirectionalLight
     float intensity;
 };
 
+
+struct Camera
+{
+    float32_t3 worldPosition;
+};
+
+
 ConstantBuffer<MaterialData> gMaterial : register(b0);
 Texture2D<float32_t4> gTexture : register(t0);
 SamplerState gSampler : register(s0);
@@ -41,7 +48,7 @@ PixelShaderOutput main(VertexShaderOutput input)
         output.color = gMaterial.color * textureColor * gDirectionalLight.color * cos * gDirectionalLight.intensity;
    
         float RdotE = dot(reflectLight, toEye);
-        float specularPow = pow(saturate(RdotE), gMaterial.shininess);
+        float specularPow = pow(saturate(RdotE), 70/*gMaterial.shininess*/);
         
         float32_t3 diffuse = gMaterial.color.rgb * textureColor.rgb * gDirectionalLight.color.rgb * cos * gDirectionalLight.intensity;
         
