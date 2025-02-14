@@ -51,6 +51,12 @@ struct MaterialData {
 };
 
 
+struct CameraForGPU {
+	Vector3 worldPosition;
+};
+
+
+
 //ウィンドウプロシージャー
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam)) {
