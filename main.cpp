@@ -358,8 +358,12 @@ D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(ID3D12DescriptorHeap* descrip
 	return handleGPU;
 }
 
+Transform transform{
+	{1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}
+};
 
-
+typedef void (*Callback)(int result);
+void judge_result(int result) { transform.rotate.y += 0.03f; }
 
 
 //Windowsアプリでのエントリーポイント(main関数)
@@ -1186,9 +1190,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 
-	Transform transform{
-		{1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f}
-	};
 
 	//
 	Transform transformSprite{ {1.0f,1.0f,1.0f},{0.0f,0.0f,0.0f},{0.0f,0.0f,0.0f} };
@@ -1226,13 +1227,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat3("light", &directionalLightData->direction.x, 0.01f, -1.0f, 1.0f);
 			ImGui::End();
 
+
+			//
+			Callback callback = judge_result;
+
+			callback(0);
+
+
+
 			directionalLightData->direction = MyMath::Normalize(directionalLightData->direction);
 
 			//
 			ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap };
 			commandList->SetDescriptorHeaps(1, descriptorHeaps);
 
-			transform.rotate.y += 0.03f;
+			//transform.rotate.y += 0.03f;
 			Transform cameraTransform{ {1.0f,1.0f,1.0f} ,{0.0f,0.0f,0.0f},{0.0f,0.0f,-5.0f} };
 
 
