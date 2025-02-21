@@ -24,6 +24,7 @@
 #include<sstream>
 #include<wrl.h>
 #include <array>
+#include<chrono>
 
 #include "Input.h"
 #include"WinApp.h"
@@ -176,6 +177,10 @@ private:
 	
 	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
+
+	std::chrono::steady_clock::time_point reference_;
+
+
 private:
 	//Initializeで呼び出す関数
 	void DeviceInitialize();
@@ -215,9 +220,9 @@ private:
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 
-	/*void InitializeFixFPS();
+	void InitializeFixFPS();
 
-	void UpdateFixFPS();*/
+	void UpdateFixFPS();
 
 
 };
