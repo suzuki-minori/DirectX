@@ -55,6 +55,20 @@ public:
 	D3D12_GPU_DESCRIPTOR_HANDLE GetSRVGPUDescriptorHandle(uint32_t index);
 
 
+	Microsoft::WRL::ComPtr < ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+
+
+	Microsoft::WRL::ComPtr < ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
+
+
+	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+
+	//
+	void PreDraw();
+	//
+	void PostDraw();
+
+	void Finalize();
 
 
 public:
@@ -64,7 +78,7 @@ public:
 
 	//Microsoft::WRL::ComPtr < ID3D12Device> GetDevice()const { return device; }
 
-	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList(){ return commandList.Get(); }
 
 	Microsoft::WRL::ComPtr < ID3D12Fence> GetFence()const { return fence; }
 
@@ -82,7 +96,7 @@ public:
 
 	uint32_t GetDescriptorSizeSRV()const { return descriptorSizeSRV; }
 
-	D3D12_RECT GetScissorRect()const { return scissorRect; }
+	D3D12_RECT GetScissorRect(){ return scissorRect; }
 
 	Microsoft::WRL::ComPtr < IDxcUtils> GetDxcUtils()const{ return dxcUtils; }
 	Microsoft::WRL::ComPtr < IDxcCompiler3> GetDxcCompiler()const { return dxcCompiler; }
@@ -93,7 +107,20 @@ public:
 	ID3D12Device* GetDevice()const { return device.Get(); }
 	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
 
-	//DirectXBase* dxBase_ = nullptr;
+	//
+	Microsoft::WRL::ComPtr < IDxcBlob> CompileShader(
+
+		//CompilerするShaderファイルへのパス
+		const std::wstring& filePath,
+
+		//Compilerに使用するProfile
+		const wchar_t* profile);
+	
+
+	
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+
+	D3D12_DEPTH_STENCIL_DESC GetDepthStencilDesc() { return depthStencilDesc; }
 
 private:
 	//
@@ -115,7 +142,7 @@ private:
 	//
 	D3D12_RESOURCE_DESC resourceDesc{};
 	//
-	D3D12_HEAP_PROPERTIES heapProperties{};
+	//D3D12_HEAP_PROPERTIES heapProperties{};
 	//
 	D3D12_CLEAR_VALUE depthClearValue{};
 	//
@@ -124,6 +151,8 @@ private:
 	uint32_t descriptorSizeDSV;
 	uint32_t descriptorSizeSRV;
 	uint32_t descriptorSizeRTV;
+
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc{};
 
 	//rtv
 	Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> rtvDescriptorHeap=nullptr;
@@ -140,9 +169,15 @@ private:
 	//
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvStartHandle;
 
+	//
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
+
+
 	Microsoft::WRL::ComPtr < ID3D12Fence> fence = nullptr;
 	
-	static const uint64_t fenceValue = 0;
+	uint64_t fenceValue = 0;
+
+	HANDLE fenceEvent;
 
 	//
 	D3D12_VIEWPORT viewport{};
@@ -150,33 +185,20 @@ private:
 	//
 	D3D12_RECT scissorRect{};
 
+	//
+	UINT backBufferIndex;
+	//
+	D3D12_RESOURCE_BARRIER barrier{};
+
 
 	Microsoft::WRL::ComPtr < IDxcUtils> dxcUtils = nullptr;
 	Microsoft::WRL::ComPtr < IDxcCompiler3> dxcCompiler = nullptr;
 	Microsoft::WRL::ComPtr < IDxcIncludeHandler> includeHandler = nullptr;
 
+	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	//
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2>swapChainResource;
 
-	//
-	Microsoft::WRL::ComPtr < IDxcBlob> CompileShader(
-
-		//CompilerするShaderファイルへのパス
-		const std::wstring& filePath,
-
-		//Compilerに使用するProfile
-		const wchar_t* profile);
-	
-	Microsoft::WRL::ComPtr < ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
-
-
-	Microsoft::WRL::ComPtr < ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
-
-
-	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
-
-	
-	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
 
 
 	std::chrono::steady_clock::time_point reference_;
@@ -209,10 +231,6 @@ private:
 	void RenderTargetViewInitialize();
 	
 
-	//
-	void PreDraw();
-	//
-	void PostDraw();
 
 
 	//

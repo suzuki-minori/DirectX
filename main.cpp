@@ -27,6 +27,7 @@
 #include"WinApp.h"
 #include"DirectXBase.h"
 #include "Logger.h"
+#include"D3DResourceLeakChecker.h"
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -175,73 +176,76 @@ std::string ConvertString(const std::wstring& str) {
 //
 //)
 
-{
-	//ここからシェーダーをコンパイルする旨をログに出す
-	Logger::Log(ConvertString(std::format(L"Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
-
-	//hlslファイルを読む
-	Microsoft::WRL::ComPtr < IDxcBlobEncoding> shaderSource = nullptr;
-	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-
-	//読めなかったら止める
-	assert(SUCCEEDED(hr));
-
-	//読み込んだファイルの内容を設定する
-	DxcBuffer shaderSourceBuffer;
-	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
-	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
 
 
-	LPCWSTR arguments[] = {
-		filePath.c_str(),//コンパイル対象のhlslファイル名
-		L"-E",L"main",//エントリーポイントの指定、基本的にmian以外にはしない
-		L"-T",profile,//ShaderPrifileの設定
-		L"-Zi",L"-Qembed_debug",//デバッグ用の情報を埋め込む
-		L"-Od",	//最適化を外しておく
-		L"-Zpr",//メモリレイアウトは行優先
-	};
 
-	//実際にShaderをコンパイルする
-	Microsoft::WRL::ComPtr < IDxcResult> shaderResult = nullptr;
-	hr = dxcCompiler->Compile(
-		&shaderSourceBuffer,//読み込んだファイル
-		arguments,			//コンパイルオプション
-		_countof(arguments),//コンパイルオプションの数
-		includeHandler.Get(),		//includeが含まれた諸々
-		IID_PPV_ARGS(&shaderResult)//コンパイル結果
-	);
-
-	//コンパイルエラーではなくdxcが起動できないなど致命的な状況
-	assert(SUCCEEDED(hr));
-
-
-	//警告・エラーが出てたらログに出して止める
-	Microsoft::WRL::ComPtr < IDxcBlobUtf8> shaderError = nullptr;
-	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
-	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
-		Logger::Log(shaderError->GetStringPointer());
-		//警告・エラーダメゼッタイ
-		assert(false);
-	}
-
-
-	//コンパイル結果から実行用のバイナリ部分を取得
-	Microsoft::WRL::ComPtr < IDxcBlob> shaderBlob = nullptr;
-	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
-
-	//成功したログを出す
-	Logger::Log(ConvertString(std::format(L"Compile Succeeded,path:{}\n", filePath, profile)));
-
-	//もう使わないリソースを解放
-	/*shaderSource->Release();
-	shaderResult->Release();*/
-
-	//実行用のバイナリを返却
-	return shaderBlob;
-
-}
+//{
+//	//ここからシェーダーをコンパイルする旨をログに出す
+//	Logger::Log(ConvertString(std::format(L"Begin CompileShader,path:{},profile:{}\n", filePath, profile)));
+//
+//	//hlslファイルを読む
+//	Microsoft::WRL::ComPtr < IDxcBlobEncoding> shaderSource = nullptr;
+//	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
+//
+//	//読めなかったら止める
+//	assert(SUCCEEDED(hr));
+//
+//	//読み込んだファイルの内容を設定する
+//	DxcBuffer shaderSourceBuffer;
+//	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
+//	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
+//	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
+//
+//
+//	LPCWSTR arguments[] = {
+//		filePath.c_str(),//コンパイル対象のhlslファイル名
+//		L"-E",L"main",//エントリーポイントの指定、基本的にmian以外にはしない
+//		L"-T",profile,//ShaderPrifileの設定
+//		L"-Zi",L"-Qembed_debug",//デバッグ用の情報を埋め込む
+//		L"-Od",	//最適化を外しておく
+//		L"-Zpr",//メモリレイアウトは行優先
+//	};
+//
+//	//実際にShaderをコンパイルする
+//	Microsoft::WRL::ComPtr < IDxcResult> shaderResult = nullptr;
+//	hr = dxcCompiler->Compile(
+//		&shaderSourceBuffer,//読み込んだファイル
+//		arguments,			//コンパイルオプション
+//		_countof(arguments),//コンパイルオプションの数
+//		includeHandler.Get(),		//includeが含まれた諸々
+//		IID_PPV_ARGS(&shaderResult)//コンパイル結果
+//	);
+//
+//	//コンパイルエラーではなくdxcが起動できないなど致命的な状況
+//	assert(SUCCEEDED(hr));
+//
+//
+//	//警告・エラーが出てたらログに出して止める
+//	Microsoft::WRL::ComPtr < IDxcBlobUtf8> shaderError = nullptr;
+//	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
+//	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
+//		Logger::Log(shaderError->GetStringPointer());
+//		//警告・エラーダメゼッタイ
+//		assert(false);
+//	}
+//
+//
+//	//コンパイル結果から実行用のバイナリ部分を取得
+//	Microsoft::WRL::ComPtr < IDxcBlob> shaderBlob = nullptr;
+//	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+//	assert(SUCCEEDED(hr));
+//
+//	//成功したログを出す
+//	Logger::Log(ConvertString(std::format(L"Compile Succeeded,path:{}\n", filePath, profile)));
+//
+//	//もう使わないリソースを解放
+//	/*shaderSource->Release();
+//	shaderResult->Release();*/
+//
+//	//実行用のバイナリを返却
+//	return shaderBlob;
+//
+//}
 
 
 ////
@@ -279,16 +283,16 @@ std::string ConvertString(const std::wstring& str) {
 //}
 
 //
-Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> CreateDescriptorHeap(Microsoft::WRL::ComPtr < ID3D12Device> device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {
-	Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
-	descriptorHeapDesc.Type = heapType;
-	descriptorHeapDesc.NumDescriptors = numDescriptors;
-	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
-	assert(SUCCEEDED(hr));
-	return descriptorHeap;
-}
+//Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> CreateDescriptorHeap(Microsoft::WRL::ComPtr < ID3D12Device> device, D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible) {
+//	Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeap = nullptr;
+//	D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc{};
+//	descriptorHeapDesc.Type = heapType;
+//	descriptorHeapDesc.NumDescriptors = numDescriptors;
+//	descriptorHeapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+//	HRESULT hr = device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&descriptorHeap));
+//	assert(SUCCEEDED(hr));
+//	return descriptorHeap;
+//}
 
 DirectX::ScratchImage LoadTexture(const std::string& filePath) {
 
@@ -520,9 +524,7 @@ ModelData LoadObjFile(const std::string& directoryPath, const std::string& filen
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-D3DLeakChecker leakChecker;
-
-	CoInitializeEx(0, COINIT_MULTITHREADED);
+D3DResourceLeakChecker leakChecker;
 
 
 
@@ -572,7 +574,7 @@ D3DLeakChecker leakChecker;
 
 #pragma endregion
 
-
+	
 
 	//
 	DirectXBase* dxBase = nullptr;
@@ -640,7 +642,7 @@ D3DLeakChecker leakChecker;
 
 	ModelData modelData = LoadObjFile("resources", "axis.obj");
 
-	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceModel = CreateBufferResource(dxBase->GetDevice(), sizeof(VertexData) * modelData.vertices.size());
+	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceModel = dxBase->CreateBufferResource( sizeof(VertexData) * modelData.vertices.size());
 	////
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewModel{};
 	////
@@ -666,14 +668,14 @@ D3DLeakChecker leakChecker;
 	//1枚目
 	mipImages[0] = LoadTexture("resources/uvChecker.png");
 	const DirectX::TexMetadata& metadata1 = mipImages[0].GetMetadata();
-	textureResource[0] = CreateTextureResource(dxBase->GetDevice(), metadata1);
-	UploadTextureData(textureResource[0], mipImages[0]);
+	textureResource[0] = dxBase->CreateTextureResource(dxBase->GetDevice(), metadata1);
+	dxBase->UploadTextureData(textureResource[0].Get(), mipImages[0]);
 
 	//2枚目
 	mipImages[1] = LoadTexture(modelData.material.textureFilePath);;
 	const DirectX::TexMetadata& metadata2 = mipImages[1].GetMetadata();
-	textureResource[1] = CreateTextureResource(dxBase->GetDevice(), metadata2);
-	UploadTextureData(textureResource[1], mipImages[1]);
+	textureResource[1] = dxBase->CreateTextureResource(dxBase->GetDevice(), metadata2);
+	dxBase->UploadTextureData(textureResource[1].Get(), mipImages[1]);
 
 
 
@@ -785,8 +787,8 @@ D3DLeakChecker leakChecker;
 	//assert(SUCCEEDED(hr));
 
 	//FenceのSignalを持つためのイベントを作成する
-	HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	assert(fenceEvent != nullptr);
+	//HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	//assert(fenceEvent != nullptr);
 
 	////dxxCompilerを初期化
 	//Microsoft::WRL::ComPtr < IDxcUtils> dxcUtils = nullptr;
@@ -852,7 +854,7 @@ D3DLeakChecker leakChecker;
 
 
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = CreateBufferResource(dxBase->GetDevice(), sizeof(TransformationMatrix));
+	Microsoft::WRL::ComPtr<ID3D12Resource> wvpResource = dxBase->CreateBufferResource(sizeof(TransformationMatrix));
 	//
 	TransformationMatrix* transformationMatrixData = nullptr;
 	//
@@ -865,7 +867,7 @@ D3DLeakChecker leakChecker;
 	
 
 	//
-	Microsoft::WRL::ComPtr < ID3D12Resource>transformationMatrixResourceSprite = CreateBufferResource(dxBase->GetDevice(), sizeof(TransformationMatrix));
+	Microsoft::WRL::ComPtr < ID3D12Resource>transformationMatrixResourceSprite = dxBase->CreateBufferResource(sizeof(TransformationMatrix));
 	//
 	TransformationMatrix* transformationMatrixDataSprite = nullptr;
 	//
@@ -930,10 +932,10 @@ D3DLeakChecker leakChecker;
 
 
 	//
-	Microsoft::WRL::ComPtr < IDxcBlob> vertexShaderBlob = CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0", dxBase->GetDxcUtils(), dxBase->GetDxcCompiler(), dxBase->GetIncludeHandler());
+	Microsoft::WRL::ComPtr < IDxcBlob> vertexShaderBlob = dxBase->CompileShader(L"resources/shaders/Object3D.VS.hlsl", L"vs_6_0");
 	assert(vertexShaderBlob != nullptr);
 
-	Microsoft::WRL::ComPtr < IDxcBlob> pixelShaderBlob = CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0", dxBase->GetDxcUtils(), dxBase->GetDxcCompiler(), dxBase->GetIncludeHandler());
+	Microsoft::WRL::ComPtr < IDxcBlob> pixelShaderBlob = dxBase->CompileShader(L"resources/shaders/Object3D.PS.hlsl", L"ps_6_0");
 	assert(pixelShaderBlob != nullptr);
 
 
@@ -949,35 +951,35 @@ D3DLeakChecker leakChecker;
 
 
 
-	////
-	//D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
-	//graphicsPipeLineStateDesc.pRootSignature = rootSignature.Get();
-	//graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
-	//graphicsPipeLineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() };
-	//graphicsPipeLineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() };
-	//graphicsPipeLineStateDesc.BlendState = blendDesc;
-	//graphicsPipeLineStateDesc.RasterizerState = rasterrizerDesc;
+	//
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipeLineStateDesc{};
+	graphicsPipeLineStateDesc.pRootSignature = rootSignature.Get();
+	graphicsPipeLineStateDesc.InputLayout = inputLayoutDesc;
+	graphicsPipeLineStateDesc.VS = { vertexShaderBlob->GetBufferPointer(),vertexShaderBlob->GetBufferSize() };
+	graphicsPipeLineStateDesc.PS = { pixelShaderBlob->GetBufferPointer(),pixelShaderBlob->GetBufferSize() };
+	graphicsPipeLineStateDesc.BlendState = blendDesc;
+	graphicsPipeLineStateDesc.RasterizerState = rasterrizerDesc;
 
-	////
-	//graphicsPipeLineStateDesc.NumRenderTargets = 1;
-	//graphicsPipeLineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	//
+	graphicsPipeLineStateDesc.NumRenderTargets = 1;
+	graphicsPipeLineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
-	////
-	//graphicsPipeLineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	//
+	graphicsPipeLineStateDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 
-	////
-	//graphicsPipeLineStateDesc.SampleDesc.Count = 1;
-	//graphicsPipeLineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
+	//
+	graphicsPipeLineStateDesc.SampleDesc.Count = 1;
+	graphicsPipeLineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	////
-	//graphicsPipeLineStateDesc.DepthStencilState = depthStencilDesc;
-	//graphicsPipeLineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	//
+	graphicsPipeLineStateDesc.DepthStencilState =dxBase->GetDepthStencilDesc();
+	graphicsPipeLineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
 
-	////
-	//Microsoft::WRL::ComPtr < ID3D12PipelineState> graphicPipeLineState = nullptr;
-	//hr = dxBase->GetDevice()->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicPipeLineState));
-	//assert(SUCCEEDED(hr));
+	//
+	Microsoft::WRL::ComPtr < ID3D12PipelineState> graphicPipeLineState = nullptr;
+	hr = dxBase->GetDevice()->CreateGraphicsPipelineState(&graphicsPipeLineStateDesc, IID_PPV_ARGS(&graphicPipeLineState));
+	assert(SUCCEEDED(hr));
 
 
 	
@@ -990,7 +992,7 @@ D3DLeakChecker leakChecker;
 
 
 #pragma region マテリアルリソースの設定
-	Microsoft::WRL::ComPtr < ID3D12Resource> materialResource = CreateBufferResource(dxBase->GetDevice(), sizeof(MaterialData));
+	Microsoft::WRL::ComPtr < ID3D12Resource> materialResource = dxBase->CreateBufferResource( sizeof(MaterialData));
 	//
 	MaterialData* materialData = nullptr;
 	//
@@ -1008,7 +1010,7 @@ D3DLeakChecker leakChecker;
 #pragma region スプライトのマテリアルリソースの設定
 
 	//
-	Microsoft::WRL::ComPtr < ID3D12Resource> materialResourceSprite = CreateBufferResource(dxBase->GetDevice(), sizeof(MaterialData));
+	Microsoft::WRL::ComPtr < ID3D12Resource> materialResourceSprite = dxBase->CreateBufferResource( sizeof(MaterialData));
 	//
 	MaterialData* materialDataSprite = nullptr;
 	//
@@ -1025,7 +1027,7 @@ D3DLeakChecker leakChecker;
 #pragma region TriangleスプライトのvertexResourceの設定
 
 	//
-	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceTriangle = CreateBufferResource(dxBase->GetDevice(), sizeof(VertexData) * 6);
+	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceTriangle = dxBase->CreateBufferResource(sizeof(VertexData) * 6);
 
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewTriangle{};
@@ -1065,7 +1067,7 @@ D3DLeakChecker leakChecker;
 
 #pragma endregion
 
-	Microsoft::WRL::ComPtr < ID3D12Resource> indexResourceSprite = CreateBufferResource(dxBase->GetDevice(), sizeof(uint32_t) * 6);
+	Microsoft::WRL::ComPtr < ID3D12Resource> indexResourceSprite = dxBase->CreateBufferResource(sizeof(uint32_t) * 6);
 	
 	uint32_t* indexSpriteData = nullptr;
 	indexResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(indexSpriteData));
@@ -1086,7 +1088,7 @@ D3DLeakChecker leakChecker;
 
 #pragma region スプライトのvertexResouceの設定
 	//
-	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceSprite = CreateBufferResource(dxBase->GetDevice(), sizeof(VertexData) * 6);
+	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceSprite = dxBase->CreateBufferResource(sizeof(VertexData) * 6);
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSprite{};
 	//
@@ -1117,7 +1119,7 @@ D3DLeakChecker leakChecker;
 	//
 	uint32_t kSubdivision = 16;
 
-	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceSphere = CreateBufferResource(dxBase->GetDevice(), sizeof(VertexData) * kSubdivision * kSubdivision * 6);
+	Microsoft::WRL::ComPtr < ID3D12Resource> vertexResourceSphere = dxBase->CreateBufferResource(sizeof(VertexData) * kSubdivision * kSubdivision * 6);
 	//
 	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
 	//
@@ -1227,7 +1229,7 @@ D3DLeakChecker leakChecker;
 	}
 #pragma endregion
 
-	Microsoft::WRL::ComPtr < ID3D12Resource> directionalLightResource = CreateBufferResource(dxBase->GetDevice(), sizeof(DirectionalLight));
+	Microsoft::WRL::ComPtr < ID3D12Resource> directionalLightResource = dxBase->CreateBufferResource(sizeof(DirectionalLight));
 	//
 	DirectionalLight* directionalLightData = nullptr;
 	//
@@ -1389,7 +1391,7 @@ D3DLeakChecker leakChecker;
 
 
 			//
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxBase->GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
+			//D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dxBase->GetDsvDescriptorHeap()->GetCPUDescriptorHandleForHeapStart();
 
 
 			//描画。処理しない。
@@ -1557,12 +1559,7 @@ D3DLeakChecker leakChecker;
 	OutputDebugStringA("Hello,DirectX!\n");
 	
 	//
-
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
-	CloseHandle(fenceEvent);
-
+	dxBase->Finalize();
 	//
 	/*wvpResource->Release();
 	materialResource->Release();
