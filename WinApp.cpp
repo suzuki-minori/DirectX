@@ -1,5 +1,6 @@
 #include "WinApp.h"
 #include<cassert>
+#pragma comment(lib,"winmm.lib")
 
 
 void WinApp::Initialize()
@@ -34,8 +35,9 @@ void WinApp::Initialize()
 		wc.hInstance,
 		nullptr);
 
-	ShowWindow(hwnd, SW_SHOW);
+	timeBeginPeriod(1);
 
+	ShowWindow(hwnd, SW_SHOW);
 
 }
 

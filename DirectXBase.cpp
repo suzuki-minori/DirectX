@@ -546,7 +546,7 @@ void DirectXBase::UpdateFixFPS()
 	std::chrono::microseconds elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - reference_);
 
 	//
-	if (elapsed < kMinTime) {
+	if (elapsed < kMinCheckTime) {
 		while (std::chrono::steady_clock::now() - reference_ < kMinTime) {
 			std::this_thread::sleep_for(std::chrono::microseconds(1));
 		}
