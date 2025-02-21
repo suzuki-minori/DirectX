@@ -61,9 +61,9 @@ public:
 	//
 	Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType, UINT numDescriptors, bool shaderVisible);
 
-	Microsoft::WRL::ComPtr < ID3D12Device> GetDevice()const { return device; }
+	//Microsoft::WRL::ComPtr < ID3D12Device> GetDevice()const { return device; }
 
-	Microsoft::WRL::ComPtr < ID3D12GraphicsCommandList> GetCommandList()const { return commandList; }
+	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
 
 	Microsoft::WRL::ComPtr < ID3D12Fence> GetFence()const { return fence; }
 
@@ -89,8 +89,8 @@ public:
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetRtvHandles()const { return rtvHandles[2]; }
 
-	//ID3D12Device* GetDevice()const { return device.Get(); }
-	//ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
+	ID3D12Device* GetDevice()const { return device.Get(); }
+	ID3D12GraphicsCommandList* GetCommandList()const { return commandList.Get(); }
 
 
 private:
@@ -156,6 +156,26 @@ private:
 	//
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 2>swapChainResource;
 
+	//
+	Microsoft::WRL::ComPtr < IDxcBlob> CompileShader(
+
+		//CompilerするShaderファイルへのパス
+		const std::wstring& filePath,
+
+		//Compilerに使用するProfile
+		const wchar_t* profile);
+	
+	Microsoft::WRL::ComPtr < ID3D12Resource> CreateBufferResource(size_t sizeInBytes);
+
+
+	Microsoft::WRL::ComPtr < ID3D12Resource> CreateTextureResource(ID3D12Device* device, const DirectX::TexMetadata& metadata);
+
+
+	void UploadTextureData(ID3D12Resource* texture, const DirectX::ScratchImage& mipImages);
+
+	
+	static DirectX::ScratchImage LoadTexture(const std::string& filePath);
+
 private:
 	//Initializeで呼び出す関数
 	void DeviceInitialize();
@@ -193,6 +213,11 @@ private:
 	static D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle(const Microsoft::WRL::ComPtr < ID3D12DescriptorHeap>descriptorHeap, uint32_t descriptorSize, uint32_t index);
 
 	static D3D12_GPU_DESCRIPTOR_HANDLE GetGPUDescriptorHandle(const Microsoft::WRL::ComPtr < ID3D12DescriptorHeap> descriptorHeap, uint32_t descriptorSize, uint32_t index);
+
+
+	/*void InitializeFixFPS();
+
+	void UpdateFixFPS();*/
 
 
 };
